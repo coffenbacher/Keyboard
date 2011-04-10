@@ -1,0 +1,4 @@
+Something like this to enable...
+
+sudo insmod driver
+modprobe driver
