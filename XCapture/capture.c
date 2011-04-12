@@ -29,8 +29,18 @@ int main(int argc, char *argv[]) {
         s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
 
         if(s) printf("KEY: %s\n", s); 
-        if(!strcmp(s, "q")) quit=~0; 
-      } 
+        if(!strcmp(s, "q")) quit=1;  
+     
+
+     case KeyRelease: 
+
+        kc = ((XKeyPressedEvent*)&ev)->keycode; 
+        s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
+
+        if(s) printf("KEY released: %s\n", s); 
+        if(!strcmp(s, "q")) quit=1;  
+     }
+ 
    } 
 
    XUngrabKeyboard(dpy, CurrentTime); 
