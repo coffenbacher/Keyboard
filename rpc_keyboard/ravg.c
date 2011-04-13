@@ -75,7 +75,7 @@ averageprog_1( char* host, int argc, char *argv[])
 			s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
 			
 			/*if(s) printf("KEY: %s\n", s);*/ 
-			if(!strcmp(s, "q")) quit=1;  
+	
 			break;
 			
 			
