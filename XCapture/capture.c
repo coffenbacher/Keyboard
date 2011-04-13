@@ -26,11 +26,12 @@ int main(int argc, char *argv[]) {
       case KeyPress: 
 
         kc = ((XKeyPressedEvent*)&ev)->keycode; 
+	printf("\n%x\n", kc);
         s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
 
         if(s) printf("KEY: %s\n", s); 
         if(!strcmp(s, "q")) quit=1;  
-     
+	break;
 
      case KeyRelease: 
 

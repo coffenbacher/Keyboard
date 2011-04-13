@@ -24,6 +24,7 @@ double *average_1(input_data *input, CLIENT *client)
         u_int i;
 	int val;
 	Display *dpy = XOpenDisplay(NULL);
+	char *s; /* take out */
 
 	logfile = fopen(LOGFILENAME, "a");
 	LOG("Average called with:  ");
@@ -32,9 +33,13 @@ double *average_1(input_data *input, CLIENT *client)
 		LOG("%f ", *dp);
                 val = (int)*dp;
 		
+		
+
 		if (!dpy) return 1;
-		XTestFakeKeyEvent(dpy, val, KEY_DOWN, CurrentTime);
-		XTestFakeKeyEvent(dpy, val, KEY_UP, CurrentTime);
+		s = XKeysymToString(XKeycodeToKeysym(dpy, val, 0));
+		printf("key pressed: %s\n", s);
+		/*XTestFakeKeyEvent(dpy,val , KEY_DOWN, CurrentTime);
+		  XTestFakeKeyEvent(dpy, val, KEY_UP, CurrentTime);*/
 		
 		dp++;
         }
