@@ -37,7 +37,7 @@ double *average_1(key_input *input, CLIENT *client)
 		s = XKeysymToString(XKeycodeToKeysym(dpy, keycode, 0));
 /*		printf("key pressed: %d %s\n", on_press, s);*/
 
-		XTestFakeKeyEvent(dpy,val , on_press, CurrentTime);
+		XTestFakeKeyEvent(dpy, keycode, on_press, CurrentTime);
 
 	} else if (input->button_event == 0) {
 		x = input->x;
@@ -103,7 +103,7 @@ double *mouse_1(mouse_input *input, CLIENT *client)
 	Display *dpy = XOpenDisplay(NULL);
 	x = input->x;
 	y = input->y;
-	printf('x: %d; y: %d\n', x, y); 
+	printf("x: %d; y: %d\n", x, y); 
 	XCloseDisplay(dpy);
 	return &sum_avg; 
 	
