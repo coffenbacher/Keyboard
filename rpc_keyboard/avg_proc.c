@@ -35,26 +35,26 @@ double *average_1(key_input *input, CLIENT *client)
 		on_press = input->on_press;
 		keycode = input->keycode;
 		s = XKeysymToString(XKeycodeToKeysym(dpy, keycode, 0));
-		printf("key pressed: %d %s\n", on_press, s);
+/*		printf("key pressed: %d %s\n", on_press, s);*/
 
-/*		XTestFakeKeyEvent(dpy,val , on_press, CurrentTime);
- */
+		XTestFakeKeyEvent(dpy,val , on_press, CurrentTime);
+
 	} else if (input->button_event == 0) {
 		x = input->x;
 		y = input->y;
-		printf("x: %d, y: %d\n", x, y); 
+		/*printf("x: %d, y: %d\n", x, y); */
 		
-		/*
+		
 		  XTestFakeMotionEvent(dpy, 0, x, y, CurrentTime); 
-		 */
+		 
 	} else {
 		button = input->button;
 		on_press = input->on_press;
-		printf("button: %d, pressed? %d\n", input->button, on_press);  
+		/*printf("button: %d, pressed? %d\n", input->button, on_press);  */
 
-		/*
+		
 		  XTestFakeButtonEvent(dpy, button, on_press, CurrentTime); 
-		 */
+		
 	}
 
 	logfile = fopen(LOGFILENAME, "a");
