@@ -38,18 +38,18 @@ GdkPixbuf * get_screenshot(){
 
 gboolean save_func(const gchar *buf, gsize count, GError **error, gpointer data){
     FILE *fp;
-    fp = fopen("test.png", "a");
-    fwrite(buf, sizeof(buf), count, fp);
+    fp = fopen("test.jpeg", "a");
+    fwrite(buf, sizeof(*buf), count, fp);
     fclose(fp);
-    return 1;
+    return TRUE;
 }
+
 int main(int argc, char *argv[]) {
     int i = 0;
     GdkPixbuf *screenshot;
     gtk_init(&argc, &argv);
-    for (i=0; i<100; i++)
-        screenshot = get_screenshot();
-    /*gdk_pixbuf_save_to_callback(screenshot, save_func, NULL, "png", NULL, NULL);*/
+    screenshot = get_screenshot();
+    gdk_pixbuf_save_to_callback(screenshot, save_func, NULL, "jpeg", NULL, "quality", "20", NULL);
     /*for (i=0; i<100; i++) 
         gdk_pixbuf_save(screenshot, "screenshot.jpg", "jpeg", NULL, "quality", "20", NULL);*/
     return 1;
