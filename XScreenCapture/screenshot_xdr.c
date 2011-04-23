@@ -10,7 +10,7 @@ xdr_input_data (XDR *xdrs, input_data *objp)
 {
 	register int32_t *buf;
 
-	 if (!xdr_bytes (xdrs, (char **)&objp->input_data.input_data_val, (u_int *) &objp->input_data.input_data_len, 200))
+	 if (!xdr_bytes (xdrs, (char **)&objp->input_data.input_data_val, (u_int *) &objp->input_data.input_data_len, ~0))
 		 return FALSE;
 	return TRUE;
 }

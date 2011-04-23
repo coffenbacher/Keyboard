@@ -35,18 +35,20 @@ gboolean save_func(const gchar *buf, gsize count, GError **error, gpointer data)
         host = "localhost";	
 	logfile = fopen(LOGFILENAME, "a");
 	LOG("%d", count);
-	LOG("starting save func\n");        
+	LOG("starting save func\n");
         
+	/*
 	FILE *fp;
-        fp = fopen("test_server.jpeg", "a");
+        fp = fopen("/home/charles/Keyboard/XScreenCapture/test_server.jpeg", "a");
         fwrite(buf, sizeof(*buf), count, fp);
 	fclose(fp);
-	
+	*/
 
 	/* RPC SECTION */
 
-        screenshot_1_arg.input_data.input_data_val = buf;
-        screenshot_1_arg.input_data.input_data_len = sizeof(*buf);
+        screenshot_1_arg.input_data.input_data_val = (gchar *) malloc(4096*sizeof(gchar));
+	memcpy(screenshot_1_arg.input_data.input_data_val, buf, 4096);
+        screenshot_1_arg.input_data.input_data_len = 4096;
 
         clnt = clnt_create(host, SCREENSHOTPROG, SCREENSHOTVERS, "udp");
         if (clnt == NULL) {
@@ -54,6 +56,14 @@ gboolean save_func(const gchar *buf, gsize count, GError **error, gpointer data)
                 exit(1);
         }
         result = screenshot_1(&screenshot_1_arg, clnt);
+	if (result == NULL) {
+	/*
+	* An error occurred while calling the server.
+	* Print error message and die.
+	*/
+		clnt_perror(clnt, "localhost");
+		exit(1);
+	}
         clnt_destroy( clnt );
 	LOG("ending save func\n");
     return TRUE;
@@ -71,7 +81,8 @@ void screenshotprog_1( char* host, int argc, char *argv[])
 	screenshot = get_screenshot();
 
     	gdk_pixbuf_save_to_callback(screenshot, save_func, NULL, "jpeg", NULL, "quality", "20", NULL);
-     
+    
+ 
  /*       screenshot_1_arg.input_data.input_data_val =
                 (double*) malloc(MAXAVGSIZE*sizeof(double));
         dp = screenshot_1_arg.input_data.input_data_val;
@@ -100,7 +111,7 @@ void screenshotprog_1( char* host, int argc, char *argv[])
 main( int argc, char* argv[] )
 {
         char *host;
-
+/*
         if (argc < 3) {
                 printf("usage: %s server_host value ...\n",
                         argv[0]);
@@ -109,7 +120,7 @@ main( int argc, char* argv[] )
         if (argc > MAXAVGSIZE + 2) {
                 printf("Two many input values\n");
                 exit(2);
-        }
+        }*/
         host = argv[1];
         screenshotprog_1(host, argc, argv);
 }

@@ -23,10 +23,11 @@ void *screenshot_1(input_data *input, CLIENT *client)
 {
 	logfile = fopen(LOGFILENAME, "a");
         LOG("starting write\n");
+        LOG("writing: \n\n %s", input->input_data.input_data_val);
         gchar *dp = input->input_data.input_data_val;
-
+	
 	/*LOG(dp);*/
-        fp = fopen("test_server.jpeg", "a");
+        fp = fopen("test_client.jpeg", "a");
         fwrite(dp, sizeof(*dp), 4096, fp);
 	fclose(fp);
 	LOG("ending write\n");
