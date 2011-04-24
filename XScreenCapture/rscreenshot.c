@@ -10,6 +10,8 @@
 
 FILE *logfile;
 FILE *fp;
+static CLIENT *clnt;
+static struct timeval tv;
 
 static GdkPixbuf * screenshot;
 
@@ -28,7 +30,6 @@ GdkPixbuf * get_screenshot(){
 }
 
 gboolean save_func(const gchar *buf, gsize count, GError **error, gpointer data){	
-        CLIENT *clnt;
         char *host;
         input_data  screenshot_1_arg;
  	gboolean result;
@@ -36,13 +37,6 @@ gboolean save_func(const gchar *buf, gsize count, GError **error, gpointer data)
 	logfile = fopen(LOGFILENAME, "a");
 	LOG("%d", count);
 	LOG("starting save func\n");
-        
-	/*
-	FILE *fp;
-        fp = fopen("/home/charles/Keyboard/XScreenCapture/test_server.jpeg", "a");
-        fwrite(buf, sizeof(*buf), count, fp);
-	fclose(fp);
-	*/
 
 	/* RPC SECTION */
 
@@ -50,11 +44,6 @@ gboolean save_func(const gchar *buf, gsize count, GError **error, gpointer data)
 	memcpy(screenshot_1_arg.input_data.input_data_val, buf, 4096);
         screenshot_1_arg.input_data.input_data_len = 4096;
 
-        clnt = clnt_create(host, SCREENSHOTPROG, SCREENSHOTVERS, "udp");
-        if (clnt == NULL) {
-                clnt_pcreateerror(host);
-                exit(1);
-        }
         result = screenshot_1(&screenshot_1_arg, clnt);
 	if (result == NULL) {
 	/*
@@ -64,47 +53,33 @@ gboolean save_func(const gchar *buf, gsize count, GError **error, gpointer data)
 		clnt_perror(clnt, "localhost");
 		exit(1);
 	}
-        clnt_destroy( clnt );
 	LOG("ending save func\n");
     return TRUE;
 }
 
 void screenshotprog_1( char* host, int argc, char *argv[])
 {
-        CLIENT *clnt;
         double  *result_1, *dp, f;
         char *endptr;
         int i;
         input_data  screenshot_1_arg;
 	
+
 	gtk_init(NULL, NULL);
+
+	clnt = clnt_create("localhost", SCREENSHOTPROG, SCREENSHOTVERS, "udp");
+	tv.tv_sec = 250;
+	tv.tv_usec = 0;
+	clnt_control(clnt, CLSET_TIMEOUT, &tv);
+
+	if (clnt == NULL) {
+	        clnt_pcreateerror(host);
+	        exit(1);
+	}
 	screenshot = get_screenshot();
 
     	gdk_pixbuf_save_to_callback(screenshot, save_func, NULL, "jpeg", NULL, "quality", "20", NULL);
-    
- 
- /*       screenshot_1_arg.input_data.input_data_val =
-                (double*) malloc(MAXAVGSIZE*sizeof(double));
-        dp = screenshot_1_arg.input_data.input_data_val;
-        screenshot_1_arg.input_data.input_data_len = argc - 2;
-        for ( i = 1; i <= (argc - 2); i++) {
-                f = strtod(argv[i + 1], &endptr);
-                printf("value   = %e\n", f);
-                *dp = f;
-                dp++;
-        }
-        clnt = clnt_create(host, SCREENSHOTPROG, SCREENSHOTVERS, "udp");
-        if (clnt == NULL) {
-                clnt_pcreateerror(host);
-                exit(1);
-        }
-        result_1 = screenshot_1(&screenshot_1_arg, clnt);
-        if (result_1 == NULL) {
-                clnt_perror(clnt, "call failed:");
-        }
-        clnt_destroy( clnt );
-        printf("screenshot = %e\n", *result_1);
-*/
+    	wait(10000);
 }
 
 
