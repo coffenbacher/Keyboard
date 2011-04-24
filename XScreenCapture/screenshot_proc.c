@@ -10,27 +10,20 @@
 #include <gdk/gdk.h>
 #include <gdk/gdkx.h>
 #include <gtk/gtk.h>
+#include <unistd.h>
 
-#define LOGFILENAME "/tmp/screenshot_log"
-#define LOG(msg, ...) fprintf(logfile, (msg), ##__VA_ARGS__)
-
-FILE *logfile;
 FILE *fp;
 
 static double sum_screenshot;
 static int result;
+
 int *screenshot_1(input_data *input, CLIENT *client)
 {
-	logfile = fopen(LOGFILENAME, "a");
-        LOG("starting write\n");
-        LOG("writing: \n\n %s", input->input_data.input_data_val);
         gchar *dp = input->input_data.input_data_val;
 	
-        fp = fopen("test_client.jpeg", "a");
+        fp = fopen("screenshot.jpeg", "a");
         fwrite(dp, sizeof(*dp), 4096, fp);
 	fclose(fp);
-	LOG("ending write\n");
-	fclose(logfile);
 	result = 1;
         return &result;
 }
@@ -41,3 +34,30 @@ int *screenshot_1_svc(input_data *input, struct svc_req *svc)
         return screenshot_1(input, client);
 }
 
+int *deleteimage_1_svc(void *tmp, struct svc_req *svc)
+{
+	unlink("/home/charles/Keyboard/XScreenCapture/screenshot.jpeg");
+	result = 1;
+        return &result;
+}
+
+int *refreshdisplay_1_svc(void *tmp, struct svc_req *svc)
+{
+	/* INSERT NEW SIGNAL HERE */
+	/* image = gtk_image_new_from_file ("screenshot.jpeg"); */
+	/*gtk_container_add(GTK_CONTAINER(window), image);	
+	gtk_widget_show_all(window);
+	gtk_main();
+	
+	gtk_widget_queue_draw(window);*/
+	kill(12036, SIGINT);
+	sleep(0.1);
+	result = 1;
+	return &result;
+}
+
+int *initdisplay_1_svc(void *tmp, struct svc_req *svc)
+{
+       result = 1;	
+       return &result;
+}

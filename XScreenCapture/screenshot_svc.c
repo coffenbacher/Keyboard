@@ -57,12 +57,138 @@ screenshotprog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 	return;
 }
 
+static void
+deleteimageprog_1(struct svc_req *rqstp, register SVCXPRT *transp)
+{
+	union {
+		int fill;
+	} argument;
+	char *result;
+	xdrproc_t _xdr_argument, _xdr_result;
+	char *(*local)(char *, struct svc_req *);
+
+	switch (rqstp->rq_proc) {
+	case NULLPROC:
+		(void) svc_sendreply (transp, (xdrproc_t) xdr_void, (char *)NULL);
+		return;
+
+	case DELETEIMAGE:
+		_xdr_argument = (xdrproc_t) xdr_void;
+		_xdr_result = (xdrproc_t) xdr_int;
+		local = (char *(*)(char *, struct svc_req *)) deleteimage_1_svc;
+		break;
+
+	default:
+		svcerr_noproc (transp);
+		return;
+	}
+	memset ((char *)&argument, 0, sizeof (argument));
+	if (!svc_getargs (transp, (xdrproc_t) _xdr_argument, (caddr_t) &argument)) {
+		svcerr_decode (transp);
+		return;
+	}
+	result = (*local)((char *)&argument, rqstp);
+	if (result != NULL && !svc_sendreply(transp, (xdrproc_t) _xdr_result, result)) {
+		svcerr_systemerr (transp);
+	}
+	if (!svc_freeargs (transp, (xdrproc_t) _xdr_argument, (caddr_t) &argument)) {
+		fprintf (stderr, "%s", "unable to free arguments");
+		exit (1);
+	}
+	return;
+}
+
+static void
+refreshdisplayprog_1(struct svc_req *rqstp, register SVCXPRT *transp)
+{
+	union {
+		int fill;
+	} argument;
+	char *result;
+	xdrproc_t _xdr_argument, _xdr_result;
+	char *(*local)(char *, struct svc_req *);
+
+	switch (rqstp->rq_proc) {
+	case NULLPROC:
+		(void) svc_sendreply (transp, (xdrproc_t) xdr_void, (char *)NULL);
+		return;
+
+	case REFRESHDISPLAY:
+		_xdr_argument = (xdrproc_t) xdr_void;
+		_xdr_result = (xdrproc_t) xdr_int;
+		local = (char *(*)(char *, struct svc_req *)) refreshdisplay_1_svc;
+		break;
+
+	default:
+		svcerr_noproc (transp);
+		return;
+	}
+	memset ((char *)&argument, 0, sizeof (argument));
+	if (!svc_getargs (transp, (xdrproc_t) _xdr_argument, (caddr_t) &argument)) {
+		svcerr_decode (transp);
+		return;
+	}
+	result = (*local)((char *)&argument, rqstp);
+	if (result != NULL && !svc_sendreply(transp, (xdrproc_t) _xdr_result, result)) {
+		svcerr_systemerr (transp);
+	}
+	if (!svc_freeargs (transp, (xdrproc_t) _xdr_argument, (caddr_t) &argument)) {
+		fprintf (stderr, "%s", "unable to free arguments");
+		exit (1);
+	}
+	return;
+}
+
+static void
+initdisplayprog_1(struct svc_req *rqstp, register SVCXPRT *transp)
+{
+	union {
+		int fill;
+	} argument;
+	char *result;
+	xdrproc_t _xdr_argument, _xdr_result;
+	char *(*local)(char *, struct svc_req *);
+
+	switch (rqstp->rq_proc) {
+	case NULLPROC:
+		(void) svc_sendreply (transp, (xdrproc_t) xdr_void, (char *)NULL);
+		return;
+
+	case INITDISPLAY:
+		_xdr_argument = (xdrproc_t) xdr_void;
+		_xdr_result = (xdrproc_t) xdr_int;
+		local = (char *(*)(char *, struct svc_req *)) initdisplay_1_svc;
+		break;
+
+	default:
+		svcerr_noproc (transp);
+		return;
+	}
+	memset ((char *)&argument, 0, sizeof (argument));
+	if (!svc_getargs (transp, (xdrproc_t) _xdr_argument, (caddr_t) &argument)) {
+		svcerr_decode (transp);
+		return;
+	}
+	result = (*local)((char *)&argument, rqstp);
+	if (result != NULL && !svc_sendreply(transp, (xdrproc_t) _xdr_result, result)) {
+		svcerr_systemerr (transp);
+	}
+	if (!svc_freeargs (transp, (xdrproc_t) _xdr_argument, (caddr_t) &argument)) {
+		fprintf (stderr, "%s", "unable to free arguments");
+		exit (1);
+	}
+	return;
+}
+
 int
 main (int argc, char **argv)
 {
 	register SVCXPRT *transp;
 
 	pmap_unset (SCREENSHOTPROG, SCREENSHOTVERS);
+	pmap_unset (DELETEIMAGEPROG, DELETEIMAGEVERS);
+	pmap_unset (REFRESHDISPLAYPROG, REFRESHDISPLAYVERS);
+	pmap_unset (INITDISPLAYPROG, INITDISPLAYVERS);
 
 	transp = svcudp_create(RPC_ANYSOCK);
 	if (transp == NULL) {
@@ -73,6 +199,18 @@ main (int argc, char **argv)
 		fprintf (stderr, "%s", "unable to register (SCREENSHOTPROG, SCREENSHOTVERS, udp).");
 		exit(1);
 	}
+	if (!svc_register(transp, DELETEIMAGEPROG, DELETEIMAGEVERS, deleteimageprog_1, IPPROTO_UDP)) {
+		fprintf (stderr, "%s", "unable to register (DELETEIMAGEPROG, DELETEIMAGEVERS, udp).");
+		exit(1);
+	}
+	if (!svc_register(transp, REFRESHDISPLAYPROG, REFRESHDISPLAYVERS, refreshdisplayprog_1, IPPROTO_UDP)) {
+		fprintf (stderr, "%s", "unable to register (REFRESHDISPLAYPROG, REFRESHDISPLAYVERS, udp).");
+		exit(1);
+	}
+	if (!svc_register(transp, INITDISPLAYPROG, INITDISPLAYVERS, initdisplayprog_1, IPPROTO_UDP)) {
+		fprintf (stderr, "%s", "unable to register (INITDISPLAYPROG, INITDISPLAYVERS, udp).");
+		exit(1);
+	}
 
 	transp = svctcp_create(RPC_ANYSOCK, 0, 0);
 	if (transp == NULL) {
@@ -81,6 +219,18 @@ main (int argc, char **argv)
 	}
 	if (!svc_register(transp, SCREENSHOTPROG, SCREENSHOTVERS, screenshotprog_1, IPPROTO_TCP)) {
 		fprintf (stderr, "%s", "unable to register (SCREENSHOTPROG, SCREENSHOTVERS, tcp).");
+		exit(1);
+	}
+	if (!svc_register(transp, DELETEIMAGEPROG, DELETEIMAGEVERS, deleteimageprog_1, IPPROTO_TCP)) {
+		fprintf (stderr, "%s", "unable to register (DELETEIMAGEPROG, DELETEIMAGEVERS, tcp).");
+		exit(1);
+	}
+	if (!svc_register(transp, REFRESHDISPLAYPROG, REFRESHDISPLAYVERS, refreshdisplayprog_1, IPPROTO_TCP)) {
+		fprintf (stderr, "%s", "unable to register (REFRESHDISPLAYPROG, REFRESHDISPLAYVERS, tcp).");
+		exit(1);
+	}
+	if (!svc_register(transp, INITDISPLAYPROG, INITDISPLAYVERS, initdisplayprog_1, IPPROTO_TCP)) {
+		fprintf (stderr, "%s", "unable to register (INITDISPLAYPROG, INITDISPLAYVERS, tcp).");
 		exit(1);
 	}
 
