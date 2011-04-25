@@ -85,6 +85,8 @@ void screenshotprog_1( char* host, int argc, char *argv[])
 		screenshot = get_screenshot();
 	    	gdk_pixbuf_save_to_callback(screenshot, save_func, NULL, "jpeg", NULL, "quality", "20", NULL);
         	result = refreshdisplay_1(NULL, clnt3);
+		sleep(1.0);
+		fprintf(stderr, "Taking screenshot\n");
 	}
 
 }
