@@ -1,1 +1,12 @@
-sudo apt-get install jack
+sudo apt-get install jackd
+sudo apt-get install libjack-jackd2-dev
+sudo gedit /etc/security/limits.conf
+<usname>	-	rtprio	99
+<usname>	-	memlock	unlimited
+<usname>	-	nice	-10
+restart
+
+gcc -o metronome -ljack -lpthread -ldl -lrt metro.c
+gcc -o simple -ljack -lpthread -ldl -lrt simple_client.c
+
+sudo /sbin/alsa force-reload
