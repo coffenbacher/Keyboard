@@ -1,12 +1,51 @@
-sudo apt-get install jackd
-sudo apt-get install libjack-jackd2-dev
+---------------------------------------------------------
+Install:
+---------------------------------------------------------
+sudo apt-get install jackd1
+
+sudo apt-get install libjack-dev
+
 sudo gedit /etc/security/limits.conf
+add at end:
 <usname>	-	rtprio	99
 <usname>	-	memlock	unlimited
 <usname>	-	nice	-10
 restart
 
+
+---------------------------------------------------------
+Compiling:
+---------------------------------------------------------
+pkg-config --cflags --libs jack
+
 gcc -o metronome -ljack -lpthread -ldl -lrt metro.c
+
 gcc -o simple -ljack -lpthread -ldl -lrt simple_client.c
 
+
+---------------------------------------------------------
+Running:
+---------------------------------------------------------
+master:
+qjackctl &
+press start
+
+slave:
+jackd -R -d net
+
+master:
+jack_netsource -H <slave jack hostname>
+
+
+---------------------------------------------------------
+Error fixes:
+---------------------------------------------------------
+see what else ALSA is linked to:
+lsof | grep /dev/shm
+
+If the soundcard is already linked to something:
 sudo /sbin/alsa force-reload
+
+
+
+http://trac.jackaudio.org/wiki/WalkThrough/User/NetJack
