@@ -1,0 +1,165 @@
+<!doctype html public "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+<title>JACK/example-clients/simple_client.c</title>
+<base href="http://jackit.sourceforge.net/cgi-bin/lxr/http/">
+</head>
+
+<body bgcolor=white>
+<div align=center>
+   ~ <b>[</b>&nbsp;<b><i>source navigation</i></b>&nbsp;<b>]</b> ~ <b>[</b>&nbsp;<a href="diff/example-clients/simple_client.c">diff markup</a>&nbsp;<b>]</b> ~ <b>[</b>&nbsp;<a href="ident">identifier search</a>&nbsp;<b>]</b> ~ <b>[</b>&nbsp;<a href="search">freetext search</a>&nbsp;<b>]</b> ~ <b>[</b>&nbsp;<a href="find">file search</a>&nbsp;<b>]</b> ~
+</div>
+
+<h1 align=center>
+  <a href="http://www.linux.org/"> 
+    Linux</a>
+  <a href="http:blurb.html">
+    Cross Reference</a><br>
+  <a href="source/">JACK</a>/<a href="source/example-clients/">example-clients</a>/<a href="source/example-clients/simple_client.c">simple_client.c</a>
+</h1>
+
+<div align=center>
+  
+</div>
+<hr>
+<pre><h4 align="center"><i>** Warning: Cannot open xref database.</i></h4>
+  <a name=L1 href="source/example-clients/simple_client.c#L1">1</a> <b><i>/** @file simple_client.c</i></b>
+  <a name=L2 href="source/example-clients/simple_client.c#L2">2</a> <b><i> *</i></b>
+  <a name=L3 href="source/example-clients/simple_client.c#L3">3</a> <b><i> * @brief This is very simple client that demonstrates the basic</i></b>
+  <a name=L4 href="source/example-clients/simple_client.c#L4">4</a> <b><i> * features of JACK as they would be used by many applications.</i></b>
+  <a name=L5 href="source/example-clients/simple_client.c#L5">5</a> <b><i> */</i></b>
+  <a name=L6 href="source/example-clients/simple_client.c#L6">6</a> 
+  <a name=L7 href="source/example-clients/simple_client.c#L7">7</a> #include &lt;stdio.h&gt;
+  <a name=L8 href="source/example-clients/simple_client.c#L8">8</a> #include &lt;errno.h&gt;
+  <a name=L9 href="source/example-clients/simple_client.c#L9">9</a> #include &lt;unistd.h&gt;
+ <a name=L10 href="source/example-clients/simple_client.c#L10">10</a> #include &lt;stdlib.h&gt;
+ <a name=L11 href="source/example-clients/simple_client.c#L11">11</a> #include &lt;string.h&gt;
+ <a name=L12 href="source/example-clients/simple_client.c#L12">12</a> 
+ <a name=L13 href="source/example-clients/simple_client.c#L13">13</a> #include &lt;jack/jack.h&gt;
+ <a name=L14 href="source/example-clients/simple_client.c#L14">14</a> 
+ <a name=L15 href="source/example-clients/simple_client.c#L15">15</a> jack_port_t *input_port;
+ <a name=L16 href="source/example-clients/simple_client.c#L16">16</a> jack_port_t *output_port;
+ <a name=L17 href="source/example-clients/simple_client.c#L17">17</a> 
+ <a name=L18 href="source/example-clients/simple_client.c#L18">18</a> <b><i>/**</i></b>
+ <a name=L19 href="source/example-clients/simple_client.c#L19">19</a> <b><i> * The process callback for this JACK application.</i></b>
+ <a name=L20 href="source/example-clients/simple_client.c#L20">20</a> <b><i> * It is called by JACK at the appropriate times.</i></b>
+ <a name=L21 href="source/example-clients/simple_client.c#L21">21</a> <b><i> */</i></b>
+ <a name=L22 href="source/example-clients/simple_client.c#L22">22</a> int
+ <a name=L23 href="source/example-clients/simple_client.c#L23">23</a> process (jack_nframes_t nframes, void *arg)
+ <a name=L24 href="source/example-clients/simple_client.c#L24">24</a> {
+ <a name=L25 href="source/example-clients/simple_client.c#L25">25</a>         jack_default_audio_sample_t *out = (jack_default_audio_sample_t *) jack_port_get_buffer (output_port, nframes);
+ <a name=L26 href="source/example-clients/simple_client.c#L26">26</a>         jack_default_audio_sample_t *in = (jack_default_audio_sample_t *) jack_port_get_buffer (input_port, nframes);
+ <a name=L27 href="source/example-clients/simple_client.c#L27">27</a> 
+ <a name=L28 href="source/example-clients/simple_client.c#L28">28</a>         memcpy (out, in, sizeof (jack_default_audio_sample_t) * nframes);
+ <a name=L29 href="source/example-clients/simple_client.c#L29">29</a>         
+ <a name=L30 href="source/example-clients/simple_client.c#L30">30</a>         return 0;      
+ <a name=L31 href="source/example-clients/simple_client.c#L31">31</a> }
+ <a name=L32 href="source/example-clients/simple_client.c#L32">32</a> 
+ <a name=L33 href="source/example-clients/simple_client.c#L33">33</a> <b><i>/**</i></b>
+ <a name=L34 href="source/example-clients/simple_client.c#L34">34</a> <b><i> * This is the shutdown callback for this JACK application.</i></b>
+ <a name=L35 href="source/example-clients/simple_client.c#L35">35</a> <b><i> * It is called by JACK if the server ever shuts down or</i></b>
+ <a name=L36 href="source/example-clients/simple_client.c#L36">36</a> <b><i> * decides to disconnect the client.</i></b>
+ <a name=L37 href="source/example-clients/simple_client.c#L37">37</a> <b><i> */</i></b>
+ <a name=L38 href="source/example-clients/simple_client.c#L38">38</a> void
+ <a name=L39 href="source/example-clients/simple_client.c#L39">39</a> jack_shutdown (void *arg)
+ <a name=L40 href="source/example-clients/simple_client.c#L40">40</a> {
+ <a name=L41 href="source/example-clients/simple_client.c#L41">41</a> 
+ <a name=L42 href="source/example-clients/simple_client.c#L42">42</a>         exit (1);
+ <a name=L43 href="source/example-clients/simple_client.c#L43">43</a> }
+ <a name=L44 href="source/example-clients/simple_client.c#L44">44</a> 
+ <a name=L45 href="source/example-clients/simple_client.c#L45">45</a> int
+ <a name=L46 href="source/example-clients/simple_client.c#L46">46</a> main (int argc, char *argv[])
+ <a name=L47 href="source/example-clients/simple_client.c#L47">47</a> {
+ <a name=L48 href="source/example-clients/simple_client.c#L48">48</a>         jack_client_t *client;
+ <a name=L49 href="source/example-clients/simple_client.c#L49">49</a>         const char **ports;
+ <a name=L50 href="source/example-clients/simple_client.c#L50">50</a> 
+ <a name=L51 href="source/example-clients/simple_client.c#L51">51</a>         if (argc &lt; 2) {
+ <a name=L52 href="source/example-clients/simple_client.c#L52">52</a>                 fprintf (stderr, <i>"usage: jack_simple_client &lt;name&gt;\n"</i>);
+ <a name=L53 href="source/example-clients/simple_client.c#L53">53</a>                 return 1;
+ <a name=L54 href="source/example-clients/simple_client.c#L54">54</a>         }
+ <a name=L55 href="source/example-clients/simple_client.c#L55">55</a> 
+ <a name=L56 href="source/example-clients/simple_client.c#L56">56</a>         <b><i>/* try to become a client of the JACK server */</i></b>
+ <a name=L57 href="source/example-clients/simple_client.c#L57">57</a> 
+ <a name=L58 href="source/example-clients/simple_client.c#L58">58</a>         if ((client = jack_client_new (argv[1])) == 0) {
+ <a name=L59 href="source/example-clients/simple_client.c#L59">59</a>                 fprintf (stderr, <i>"jack server not running?\n"</i>);
+ <a name=L60 href="source/example-clients/simple_client.c#L60">60</a>                 return 1;
+ <a name=L61 href="source/example-clients/simple_client.c#L61">61</a>         }
+ <a name=L62 href="source/example-clients/simple_client.c#L62">62</a> 
+ <a name=L63 href="source/example-clients/simple_client.c#L63">63</a>         <b><i>/* tell the JACK server to call `process()' whenever</i></b>
+ <a name=L64 href="source/example-clients/simple_client.c#L64">64</a> <b><i>           there is work to be done.</i></b>
+ <a name=L65 href="source/example-clients/simple_client.c#L65">65</a> <b><i>        */</i></b>
+ <a name=L66 href="source/example-clients/simple_client.c#L66">66</a> 
+ <a name=L67 href="source/example-clients/simple_client.c#L67">67</a>         jack_set_process_callback (client, process, 0);
+ <a name=L68 href="source/example-clients/simple_client.c#L68">68</a> 
+ <a name=L69 href="source/example-clients/simple_client.c#L69">69</a>         <b><i>/* tell the JACK server to call `jack_shutdown()' if</i></b>
+ <a name=L70 href="source/example-clients/simple_client.c#L70">70</a> <b><i>           it ever shuts down, either entirely, or if it</i></b>
+ <a name=L71 href="source/example-clients/simple_client.c#L71">71</a> <b><i>           just decides to stop calling us.</i></b>
+ <a name=L72 href="source/example-clients/simple_client.c#L72">72</a> <b><i>        */</i></b>
+ <a name=L73 href="source/example-clients/simple_client.c#L73">73</a> 
+ <a name=L74 href="source/example-clients/simple_client.c#L74">74</a>         jack_on_shutdown (client, jack_shutdown, 0);
+ <a name=L75 href="source/example-clients/simple_client.c#L75">75</a> 
+ <a name=L76 href="source/example-clients/simple_client.c#L76">76</a>         <b><i>/* display the current sample rate. </i></b>
+ <a name=L77 href="source/example-clients/simple_client.c#L77">77</a> <b><i>         */</i></b>
+ <a name=L78 href="source/example-clients/simple_client.c#L78">78</a> 
+ <a name=L79 href="source/example-clients/simple_client.c#L79">79</a>         printf (<i>"engine sample rate: %"</i> PRIu32 <i>"\n"</i>,
+ <a name=L80 href="source/example-clients/simple_client.c#L80">80</a>                 jack_get_sample_rate (client));
+ <a name=L81 href="source/example-clients/simple_client.c#L81">81</a> 
+ <a name=L82 href="source/example-clients/simple_client.c#L82">82</a>         <b><i>/* create two ports */</i></b>
+ <a name=L83 href="source/example-clients/simple_client.c#L83">83</a> 
+ <a name=L84 href="source/example-clients/simple_client.c#L84">84</a>         input_port = jack_port_register (client, <i>"input"</i>, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+ <a name=L85 href="source/example-clients/simple_client.c#L85">85</a>         output_port = jack_port_register (client, <i>"output"</i>, JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
+ <a name=L86 href="source/example-clients/simple_client.c#L86">86</a> 
+ <a name=L87 href="source/example-clients/simple_client.c#L87">87</a>         <b><i>/* tell the JACK server that we are ready to roll */</i></b>
+ <a name=L88 href="source/example-clients/simple_client.c#L88">88</a> 
+ <a name=L89 href="source/example-clients/simple_client.c#L89">89</a>         if (jack_activate (client)) {
+ <a name=L90 href="source/example-clients/simple_client.c#L90">90</a>                 fprintf (stderr, <i>"cannot activate client"</i>);
+ <a name=L91 href="source/example-clients/simple_client.c#L91">91</a>                 return 1;
+ <a name=L92 href="source/example-clients/simple_client.c#L92">92</a>         }
+ <a name=L93 href="source/example-clients/simple_client.c#L93">93</a> 
+ <a name=L94 href="source/example-clients/simple_client.c#L94">94</a>         <b><i>/* connect the ports. Note: you can't do this before</i></b>
+ <a name=L95 href="source/example-clients/simple_client.c#L95">95</a> <b><i>           the client is activated, because we can't allow</i></b>
+ <a name=L96 href="source/example-clients/simple_client.c#L96">96</a> <b><i>           connections to be made to clients that aren't</i></b>
+ <a name=L97 href="source/example-clients/simple_client.c#L97">97</a> <b><i>           running.</i></b>
+ <a name=L98 href="source/example-clients/simple_client.c#L98">98</a> <b><i>        */</i></b>
+ <a name=L99 href="source/example-clients/simple_client.c#L99">99</a> 
+<a name=L100 href="source/example-clients/simple_client.c#L100">100</a>         if ((ports = jack_get_ports (client, NULL, NULL, JackPortIsPhysical|JackPortIsOutput)) == NULL) {
+<a name=L101 href="source/example-clients/simple_client.c#L101">101</a>                 fprintf(stderr, <i>"Cannot find any physical capture ports\n"</i>);
+<a name=L102 href="source/example-clients/simple_client.c#L102">102</a>                 exit(1);
+<a name=L103 href="source/example-clients/simple_client.c#L103">103</a>         }
+<a name=L104 href="source/example-clients/simple_client.c#L104">104</a> 
+<a name=L105 href="source/example-clients/simple_client.c#L105">105</a>         if (jack_connect (client, ports[0], jack_port_name (input_port))) {
+<a name=L106 href="source/example-clients/simple_client.c#L106">106</a>                 fprintf (stderr, <i>"cannot connect input ports\n"</i>);
+<a name=L107 href="source/example-clients/simple_client.c#L107">107</a>         }
+<a name=L108 href="source/example-clients/simple_client.c#L108">108</a> 
+<a name=L109 href="source/example-clients/simple_client.c#L109">109</a>         free (ports);
+<a name=L110 href="source/example-clients/simple_client.c#L110">110</a>         
+<a name=L111 href="source/example-clients/simple_client.c#L111">111</a>         if ((ports = jack_get_ports (client, NULL, NULL, JackPortIsPhysical|JackPortIsInput)) == NULL) {
+<a name=L112 href="source/example-clients/simple_client.c#L112">112</a>                 fprintf(stderr, <i>"Cannot find any physical playback ports\n"</i>);
+<a name=L113 href="source/example-clients/simple_client.c#L113">113</a>                 exit(1);
+<a name=L114 href="source/example-clients/simple_client.c#L114">114</a>         }
+<a name=L115 href="source/example-clients/simple_client.c#L115">115</a> 
+<a name=L116 href="source/example-clients/simple_client.c#L116">116</a>         if (jack_connect (client, jack_port_name (output_port), ports[0])) {
+<a name=L117 href="source/example-clients/simple_client.c#L117">117</a>                 fprintf (stderr, <i>"cannot connect output ports\n"</i>);
+<a name=L118 href="source/example-clients/simple_client.c#L118">118</a>         }
+<a name=L119 href="source/example-clients/simple_client.c#L119">119</a> 
+<a name=L120 href="source/example-clients/simple_client.c#L120">120</a>         free (ports);
+<a name=L121 href="source/example-clients/simple_client.c#L121">121</a> 
+<a name=L122 href="source/example-clients/simple_client.c#L122">122</a>         <b><i>/* Since this is just a toy, run for a few seconds, then finish */</i></b>
+<a name=L123 href="source/example-clients/simple_client.c#L123">123</a> 
+<a name=L124 href="source/example-clients/simple_client.c#L124">124</a>         sleep (10);
+<a name=L125 href="source/example-clients/simple_client.c#L125">125</a>         jack_client_close (client);
+<a name=L126 href="source/example-clients/simple_client.c#L126">126</a>         exit (0);
+<a name=L127 href="source/example-clients/simple_client.c#L127">127</a> }
+<a name=L128 href="source/example-clients/simple_client.c#L128">128</a> 
+<a name=L129 href="source/example-clients/simple_client.c#L129">129</a> </pre><hr>
+<div align=center>
+   ~ <b>[</b>&nbsp;<b><i>source navigation</i></b>&nbsp;<b>]</b> ~ <b>[</b>&nbsp;<a href="diff/example-clients/simple_client.c">diff markup</a>&nbsp;<b>]</b> ~ <b>[</b>&nbsp;<a href="ident">identifier search</a>&nbsp;<b>]</b> ~ <b>[</b>&nbsp;<a href="search">freetext search</a>&nbsp;<b>]</b> ~ <b>[</b>&nbsp;<a href="find">file search</a>&nbsp;<b>]</b> ~
+</div>
+
+<hr>
+This page was automatically generated by the 
+<a href="http:blurb.html">LXR engine</a>.
+<br>
+Visit the <a href="http://lxr.linux.no/">LXR main site</a> for more
+information.
+</html>
