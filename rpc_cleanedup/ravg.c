@@ -38,21 +38,21 @@ void desktopprog_1( char* host, int argc, char *argv[])
 	Cursor cursor;
 	int x, y, x_root, y_root;
      
-	printf("before creating clients...\n"); 
+
         clnt = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "udp");
-	
+	printf("after clnt\n"); 
 	clnt2 = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp"); 
 
 
-	printf("Before if\n"); 
+
         if (clnt == NULL || clnt2 == NULL) {
-		printf("Fialing here\n");
+		printf("Failing here\n");
                 clnt_pcreateerror(host);
 		
-                /*exit(1);*/
+                exit(1);
         }
 
-	printf("after if\n"); 
+
 	/*******************************************/
 	/** XCapture stuff **/
 	if((dpy = XOpenDisplay(NULL)) == NULL) {
