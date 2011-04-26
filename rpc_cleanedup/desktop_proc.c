@@ -5,7 +5,7 @@
  *
  */
 #include <rpc/rpc.h>
-#include "avg.h"
+#include "desktop.h"
 #include <stdio.h>
 
 #include "X11/extensions/XTest.h"
