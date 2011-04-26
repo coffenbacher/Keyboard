@@ -26,6 +26,7 @@ int main() {
 	image = gtk_image_new_from_file ("screenshot.jpeg");
 	gtk_container_add(GTK_CONTAINER(window), image);	
 	gtk_widget_show_all(window);
+	gtk_window_fullscreen(window);
 	gtk_main();
 /*        pid = fork();
         if (pid == 0) {

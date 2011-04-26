@@ -36,7 +36,7 @@ int *screenshot_1_svc(input_data *input, struct svc_req *svc)
 
 int *deleteimage_1_svc(void *tmp, struct svc_req *svc)
 {
-	unlink("/home/charles/Keyboard/XScreenCapture/screenshot.jpeg");
+	unlink("screenshot.jpeg");
 	result = 1;
         return &result;
 }
@@ -50,7 +50,10 @@ int *refreshdisplay_1_svc(void *tmp, struct svc_req *svc)
 	gtk_main();
 	
 	gtk_widget_queue_draw(window);*/
+
+
 	kill(15185, SIGIO);
+
 	result = 1;
 	return &result;
 }
