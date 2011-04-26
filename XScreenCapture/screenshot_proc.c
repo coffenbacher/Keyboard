@@ -50,8 +50,10 @@ int *refreshdisplay_1_svc(void *tmp, struct svc_req *svc)
 	gtk_main();
 	
 	gtk_widget_queue_draw(window);*/
-	kill(3201, SIGINT);
-	sleep(0.1);
+
+
+	kill(15185, SIGIO);
+
 	result = 1;
 	return &result;
 }

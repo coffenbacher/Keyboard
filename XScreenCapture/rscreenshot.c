@@ -62,22 +62,22 @@ void screenshotprog_1( char* host, int argc, char *argv[])
 
 	gtk_init(NULL, NULL);
 
-	clnt = clnt_create("localhost", SCREENSHOTPROG, SCREENSHOTVERS, "udp");
+	clnt = clnt_create(host, SCREENSHOTPROG, SCREENSHOTVERS, "udp");
 
 	if (clnt == NULL) {
 	        clnt_pcreateerror(host);
 	        exit(1);
 	}
 	
-        clnt2 = clnt_create("localhost", DELETEIMAGEPROG, DELETEIMAGEVERS, "udp");
+        clnt2 = clnt_create(host, DELETEIMAGEPROG, DELETEIMAGEVERS, "udp");
 
 	if (clnt2 == NULL) {
 	        clnt_pcreateerror(host);
 	        exit(1);
 	}
 
-	clnt3 = clnt_create("localhost", REFRESHDISPLAYPROG, REFRESHDISPLAYVERS, "udp");	
-	clnt4 = clnt_create("localhost", INITDISPLAYPROG, INITDISPLAYVERS, "udp");	
+	clnt3 = clnt_create(host, REFRESHDISPLAYPROG, REFRESHDISPLAYVERS, "udp");	
+	clnt4 = clnt_create(host, INITDISPLAYPROG, INITDISPLAYVERS, "udp");	
 	initdisplay_1(NULL, clnt4);
 
 	for (i=0; i<3000; i++){
@@ -85,6 +85,8 @@ void screenshotprog_1( char* host, int argc, char *argv[])
 		screenshot = get_screenshot();
 	    	gdk_pixbuf_save_to_callback(screenshot, save_func, NULL, "jpeg", NULL, "quality", "20", NULL);
         	result = refreshdisplay_1(NULL, clnt3);
+		sleep(1.0);
+		fprintf(stderr, "Taking screenshot\n");
 	}
 
 }

@@ -40,15 +40,12 @@ void desktopprog_1( char* host, int argc, char *argv[])
      
 
         clnt = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "udp");
-	printf("after clnt\n"); 
 	clnt2 = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp"); 
 
 
 
         if (clnt == NULL || clnt2 == NULL) {
-		printf("Failing here\n");
                 clnt_pcreateerror(host);
-		
                 exit(1);
         }
 

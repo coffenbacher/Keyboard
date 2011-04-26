@@ -6,9 +6,9 @@
 static GtkWidget *window;
 static GtkWidget *image;
 
-void sigint_handler(int sig)
+void sigio_handler(int sig)
 {
-	fprintf(stderr, "Oof!\n");
+	printf("Updating buffer...");
 
 	gtk_container_remove(GTK_CONTAINER(window), image);
 	image = gtk_image_new_from_file ("screenshot.jpeg");
@@ -17,7 +17,7 @@ void sigint_handler(int sig)
 }
 
 int main() {
-	(void) signal(SIGINT, sigint_handler);
+	(void) signal(SIGIO, sigio_handler);
 
 	gtk_init(NULL, NULL);
 	
@@ -26,6 +26,7 @@ int main() {
 	image = gtk_image_new_from_file ("screenshot.jpeg");
 	gtk_container_add(GTK_CONTAINER(window), image);	
 	gtk_widget_show_all(window);
+	gtk_window_fullscreen(window);
 	gtk_main();
 /*        pid = fork();
         if (pid == 0) {
