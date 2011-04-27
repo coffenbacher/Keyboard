@@ -50,7 +50,14 @@ void desktopprog_1( char* host, int argc, char *argv[])
 	Cursor cursor;
 	int x, y, x_root, y_root;
      
-	create_clients(host, clnt_keyboard, clnt_mouse); 
+	/*create_clients(host, clnt_keyboard, clnt_mouse); */
+        clnt_keyboard = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "udp");
+	clnt_mouse = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp"); 
+
+        if (clnt_keyboard == NULL || clnt_mouse == NULL) {
+                clnt_pcreateerror(host);
+                exit(1);
+        }
 
 
 	/*******************************************/
@@ -70,7 +77,7 @@ void desktopprog_1( char* host, int argc, char *argv[])
 		     cursor, CurrentTime); 
 		   
 
-	
+
 	while(!quit) { 
 		XEvent ev; 
 		
