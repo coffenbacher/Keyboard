@@ -23,12 +23,12 @@ int get_next_host_index(int cur_host_index, int argc, int up)
 	return next_host_index;
 }
 
-void create_clients(char *host, CLIENT *clnt_keyboard, CLIENT *clnt_mouse)
+void create_clients(char *host, CLIENT **clnt_keyboard, CLIENT **clnt_mouse)
 {
-        clnt_keyboard = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "udp");
-	clnt_mouse = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp"); 
+        *clnt_keyboard = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "udp");
+	  *clnt_mouse = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp"); 
 
-        if (clnt_keyboard == NULL || clnt_mouse == NULL) {
+        if (*clnt_keyboard == NULL || *clnt_mouse == NULL) {
                 clnt_pcreateerror(host);
                 exit(1);
         }
@@ -50,14 +50,17 @@ void desktopprog_1( char* host, int argc, char *argv[])
 	Cursor cursor;
 	int x, y, x_root, y_root;
      
-	/*create_clients(host, clnt_keyboard, clnt_mouse); */
-        clnt_keyboard = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "udp");
-	clnt_mouse = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp"); 
 
+/*        clnt_keyboard = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "udp");
+	  clnt_mouse = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp"); */
+
+	create_clients(host, &clnt_keyboard, &clnt_mouse); 
+
+	/*
         if (clnt_keyboard == NULL || clnt_mouse == NULL) {
                 clnt_pcreateerror(host);
                 exit(1);
-        }
+		} */
 
 
 	/*******************************************/
