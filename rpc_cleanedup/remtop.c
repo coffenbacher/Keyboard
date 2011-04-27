@@ -23,10 +23,13 @@ int get_next_host_index(int cur_host_index, int argc, int up)
 	return next_host_index;
 }
 
+/*
+ Creates the keyboard and mouse clients based on given host name.
+ */
 void create_clients(char *host, CLIENT **clnt_keyboard, CLIENT **clnt_mouse)
 {
         *clnt_keyboard = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "udp");
-	  *clnt_mouse = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp"); 
+	*clnt_mouse = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp"); 
 
         if (*clnt_keyboard == NULL || *clnt_mouse == NULL) {
                 clnt_pcreateerror(host);
@@ -34,6 +37,15 @@ void create_clients(char *host, CLIENT **clnt_keyboard, CLIENT **clnt_mouse)
         }
 
 } /* end create_clients */
+
+/*
+  Destroys the keyboard and mouse clients.
+ */
+void destroy_clients(CLIENT *clnt_keyboard, CLIENT *clnt_mouse) 
+{
+        clnt_destroy( clnt_keyboard );
+	clnt_destroy( clnt_mouse ); 
+} /* end destroy_clients */
 
 void desktopprog_1( char* host, int argc, char *argv[])
 {
@@ -157,40 +169,27 @@ void desktopprog_1( char* host, int argc, char *argv[])
 					cur_host_index, argc, 1);
 				host = argv[cur_host_index+1]; 
 				printf("host%s\n", argv[cur_host_index+1]);
-				clnt_destroy( clnt_keyboard );
-				clnt_destroy( clnt_mouse ); 
-				clnt_keyboard = clnt_create(host, KEYBOARDPROG,
-						   KEYBOARDVERS, "udp");
-				clnt_mouse = clnt_create(host, MOUSEPROG,
-						    MOUSEVERS, "udp");
-				if (clnt_keyboard == NULL || clnt_mouse == NULL) {
-		
-					clnt_pcreateerror(host);
-					
-					exit(1);
-        }
+/*				clnt_destroy( clnt_keyboard );
+				clnt_destroy( clnt_mouse ); */
+				destroy_clients(clnt_keyboard, clnt_mouse); 
+				create_clients(host, &clnt_keyboard,
+					       &clnt_mouse); 
 			} else if (!strcmp(s, "Down")) {
 				cur_host_index = get_next_host_index(
 					cur_host_index, argc, 0);
 				host = argv[cur_host_index+1]; 
 				printf("host%s\n", argv[cur_host_index+1]);
-				clnt_destroy( clnt_keyboard );
-				clnt_destroy( clnt_mouse ); 
-				clnt_keyboard = clnt_create(host, KEYBOARDPROG,
-						   KEYBOARDVERS, "udp");
-				clnt_mouse = clnt_create(host, MOUSEPROG,
-						    MOUSEVERS, "udp");
-				if (clnt_keyboard == NULL || clnt_mouse == NULL) {
-		
-					clnt_pcreateerror(host);
-					
-					exit(1);
-				}
+				destroy_clients(clnt_keyboard, clnt_mouse); 
+				/*clnt_destroy( clnt_keyboard );
+				  clnt_destroy( clnt_mouse ); */
+				create_clients(host, &clnt_keyboard,
+					       &clnt_mouse); 
+
 			}
 			break;
 
 		 
-		}
+			} 
 		
 
 		
@@ -214,8 +213,10 @@ void desktopprog_1( char* host, int argc, char *argv[])
                 clnt_perror(clnt, "call failed:");
 		} */
 
-        clnt_destroy( clnt_keyboard );
-	clnt_destroy( clnt_mouse ); 
+/*        clnt_destroy( clnt_keyboard );
+	  clnt_destroy( clnt_mouse );  */
+
+	destroy_clients(clnt_keyboard, clnt_mouse); 
         /*printf("average = %e\n", *result_1); */
 	printf("done? \n"); 
 }
