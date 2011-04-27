@@ -1,7 +1,7 @@
 /* Remote average client code.
  * Taken from http://www.linuxjournal.com/articles/lj/0042/2204/2204l4.html
  */
-#include "desktop.h"
+#include "remtop.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <X11/Xlib.h>
@@ -23,9 +23,21 @@ int get_next_host_index(int cur_host_index, int argc, int up)
 	return next_host_index;
 }
 
+void create_clients(char *host, CLIENT *clnt_keyboard, CLIENT *clnt_mouse)
+{
+        clnt_keyboard = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "udp");
+	clnt_mouse = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp"); 
+
+        if (clnt_keyboard == NULL || clnt_mouse == NULL) {
+                clnt_pcreateerror(host);
+                exit(1);
+        }
+
+} /* end create_clients */
+
 void desktopprog_1( char* host, int argc, char *argv[])
 {
-        CLIENT *clnt, *clnt2;        
+        CLIENT *clnt_keyboard, *clnt_mouse;        
         
 	key_input keyboard_1_arg; 
 	mouse_input mouse_1_arg;
@@ -38,16 +50,7 @@ void desktopprog_1( char* host, int argc, char *argv[])
 	Cursor cursor;
 	int x, y, x_root, y_root;
      
-
-        clnt = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "udp");
-	clnt2 = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp"); 
-
-
-
-        if (clnt == NULL || clnt2 == NULL) {
-                clnt_pcreateerror(host);
-                exit(1);
-        }
+	create_clients(host, clnt_keyboard, clnt_mouse); 
 
 
 	/*******************************************/
@@ -84,7 +87,7 @@ void desktopprog_1( char* host, int argc, char *argv[])
 			mouse_1_arg.on_press = 1;
 			mouse_1_arg.button = 
 				((XButtonPressedEvent*)&ev)->button;
-			mouse_1(&mouse_1_arg, clnt2);
+			mouse_1(&mouse_1_arg, clnt_mouse);
 			break;
 		case ButtonRelease:
 /*			keyboard_1_arg.keyboard = 0;
@@ -96,7 +99,7 @@ void desktopprog_1( char* host, int argc, char *argv[])
 			mouse_1_arg.on_press = 0;
 			mouse_1_arg.button = 
 				((XButtonPressedEvent*)&ev)->button;
-			mouse_1(&mouse_1_arg, clnt2);
+			mouse_1(&mouse_1_arg, clnt_mouse);
 			break;
 		case MotionNotify:
 			/*printf("in motion notify \n"); */
@@ -107,7 +110,7 @@ void desktopprog_1( char* host, int argc, char *argv[])
 		        mouse_1_arg.x = x;
 			mouse_1_arg.y = y;
 			mouse_1_arg.button_event = 0; 
-			mouse_1(&mouse_1_arg, clnt2);
+			mouse_1(&mouse_1_arg, clnt_mouse);
 			/*mouse_1(&mouse_1_arg, clnt2); */ 
 			break;
 
@@ -118,7 +121,7 @@ void desktopprog_1( char* host, int argc, char *argv[])
 /*			keyboard_1_arg.keyboard = 1; */
 			keyboard_1_arg.on_press = 1;
 			keyboard_1_arg.keycode = kc;
-			keyboard_1(&keyboard_1_arg, clnt);
+			keyboard_1(&keyboard_1_arg, clnt_keyboard);
 			/*printf("\n%x\n", kc); */
 			s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
 			
@@ -133,7 +136,7 @@ void desktopprog_1( char* host, int argc, char *argv[])
 /*			keyboard_1_arg.keyboard = 1; */
 			keyboard_1_arg.on_press = 0;
 			keyboard_1_arg.keycode = kc;
-			keyboard_1(&keyboard_1_arg, clnt); 
+			keyboard_1(&keyboard_1_arg, clnt_keyboard); 
 			
 			s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
 			
@@ -144,13 +147,13 @@ void desktopprog_1( char* host, int argc, char *argv[])
 					cur_host_index, argc, 1);
 				host = argv[cur_host_index+1]; 
 				printf("host%s\n", argv[cur_host_index+1]);
-				clnt_destroy( clnt );
-				clnt_destroy( clnt2 ); 
-				clnt = clnt_create(host, KEYBOARDPROG,
+				clnt_destroy( clnt_keyboard );
+				clnt_destroy( clnt_mouse ); 
+				clnt_keyboard = clnt_create(host, KEYBOARDPROG,
 						   KEYBOARDVERS, "udp");
-				clnt2 = clnt_create(host, MOUSEPROG,
+				clnt_mouse = clnt_create(host, MOUSEPROG,
 						    MOUSEVERS, "udp");
-				if (clnt == NULL || clnt2 == NULL) {
+				if (clnt_keyboard == NULL || clnt_mouse == NULL) {
 		
 					clnt_pcreateerror(host);
 					
@@ -161,13 +164,13 @@ void desktopprog_1( char* host, int argc, char *argv[])
 					cur_host_index, argc, 0);
 				host = argv[cur_host_index+1]; 
 				printf("host%s\n", argv[cur_host_index+1]);
-				clnt_destroy( clnt );
-				clnt_destroy( clnt2 ); 
-				clnt = clnt_create(host, KEYBOARDPROG,
+				clnt_destroy( clnt_keyboard );
+				clnt_destroy( clnt_mouse ); 
+				clnt_keyboard = clnt_create(host, KEYBOARDPROG,
 						   KEYBOARDVERS, "udp");
-				clnt2 = clnt_create(host, MOUSEPROG,
+				clnt_mouse = clnt_create(host, MOUSEPROG,
 						    MOUSEVERS, "udp");
-				if (clnt == NULL || clnt2 == NULL) {
+				if (clnt_keyboard == NULL || clnt_mouse == NULL) {
 		
 					clnt_pcreateerror(host);
 					
@@ -201,8 +204,8 @@ void desktopprog_1( char* host, int argc, char *argv[])
                 clnt_perror(clnt, "call failed:");
 		} */
 
-        clnt_destroy( clnt );
-	clnt_destroy( clnt2 ); 
+        clnt_destroy( clnt_keyboard );
+	clnt_destroy( clnt_mouse ); 
         /*printf("average = %e\n", *result_1); */
 	printf("done? \n"); 
 }

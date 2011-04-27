@@ -5,26 +5,26 @@ CFLAGS = -g -Wall
 
 # Back to our regularly scheduled Makefile...
 
-BIN    = rdesktop desktop_svc
-GEN    = desktop_clnt.c desktop_svc.c desktop_xdr.c desktop.h
+BIN    = remtop remtop_svc
+GEN    = remtop_clnt.c remtop_svc.c remtop_xdr.c remtop.h
 RPCCOM = rpcgen
 
 all: $(BIN)
 
-# rdesktop (remote desktop) is the client
-rdesktop: rdesktop.o desktop_clnt.o desktop_xdr.o
-	$(CC) -o $@ rdesktop.o desktop_clnt.o desktop_xdr.o -lXtst
+# remtop (remote desktop) is the client
+remtop: remtop.o remtop_clnt.o remtop_xdr.o
+	$(CC) -o $@ remtop.o remtop_clnt.o remtop_xdr.o -lXtst
 
-rdesktop.o: rdesktop.c desktop.h
-	$(CC) -g rdesktop.c -c
+remtop.o: remtop.c remtop.h
+	$(CC) -g remtop.c -c
 
-desktop_svc: desktop_proc.o desktop_svc.o desktop_xdr.o
-	$(CC) -o $@ desktop_proc.o desktop_svc.o desktop_xdr.o -lXtst
+remtop_svc: remtop_proc.o remtop_svc.o remtop_xdr.o
+	$(CC) -o $@ remtop_proc.o remtop_svc.o remtop_xdr.o -lXtst
 
-desktop_proc.o: desktop_proc.c desktop.h
+remtop_proc.o: remtop_proc.c remtop.h
 
-$(GEN): desktop.x
-	$(RPCCOM) desktop.x
+$(GEN): remtop.x
+	$(RPCCOM) remtop.x
 
 clean cleanup:
 	rm -f $(GEN) *.o $(BIN)
