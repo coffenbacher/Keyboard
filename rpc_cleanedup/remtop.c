@@ -68,12 +68,12 @@ void create_clients(char *host, CLIENT **clnt_keyboard, CLIENT **clnt_mouse)
 		printf("YEP ITS NULL!\n");
 	} else {
 		printf("Nope it's not null cuz host is %s\n", host);
-	}
+		} */
 
         if (*clnt_keyboard == NULL || *clnt_mouse == NULL) {
                 clnt_pcreateerror(host);
                 exit(1);
-		} */
+		} 
 
 } /* end create_clients */
 
@@ -82,6 +82,8 @@ void create_clients(char *host, CLIENT **clnt_keyboard, CLIENT **clnt_mouse)
  */
 void destroy_clients(CLIENT *clnt_keyboard, CLIENT *clnt_mouse) 
 {
+	/* TODO: confirm that we aren't supposed to be passing ** */
+	
         clnt_destroy( clnt_keyboard );
 	clnt_destroy( clnt_mouse ); 
 } /* end destroy_clients */
@@ -122,23 +124,27 @@ void ungrab_hardware(Display *dpy)
 
 
 
-int switch_hosts(char *host, Display *dpy, CLIENT *clnt_keyboard, CLIENT *clnt_mouse) 
+void switch_hosts(char *host, Display *dpy, CLIENT **clnt_keyboard,
+		 CLIENT **clnt_mouse) 
 {
+	printf("in switch hosts\n"); 
 	if (hostType == LOCALHOST) {
 		ungrab_keycombos(dpy);
 	} else if (hostType == REMOTEHOST) {
 		ungrab_hardware(dpy);
-		destroy_clients(clnt_keyboard, clnt_mouse); 
+		destroy_clients(*clnt_keyboard, *clnt_mouse); 
 	}
 
 	if (strncmp(host, "localhost", 10) == 0) {
 		printf("is localhost\n");
 		hostType = REMOTEHOST; /* TODO: change this to = LOCALHOST */
-		grab_keycombos(dpy); 
+		/*grab_keycombos(dpy);*/   /* TODO: put this line back in */
+		create_clients(host, clnt_keyboard, clnt_mouse); 
+		grab_hardware(dpy); /* TODO: take this and above line out*/
 	} else {
 		printf("isn't localhost\n");
 		hostType = REMOTEHOST;
-		create_clients(host, &clnt_keyboard, &clnt_mouse);
+		create_clients(host, clnt_keyboard, clnt_mouse);
 		grab_hardware(dpy); 
 	}
 			
@@ -165,9 +171,9 @@ void desktopprog_1( char* host, int argc, char *argv[])
 /*        clnt_keyboard = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "udp");
 	  clnt_mouse = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp"); */
 
-	printf("Creating clients \n"); 
+/*	printf("Creating clients \n"); 
 	create_clients(host, &clnt_keyboard, &clnt_mouse); 
-	printf("End Creating clients \n"); 
+	printf("End Creating clients \n"); */
 
 	/*
         if (clnt_keyboard == NULL || clnt_mouse == NULL) {
@@ -184,7 +190,11 @@ void desktopprog_1( char* host, int argc, char *argv[])
 		exit(1); 
 	} 
 
-	grab_hardware(dpy);
+	/*
+	  grab_hardware(dpy); */
+
+	switch_hosts(host, dpy, &clnt_keyboard, &clnt_mouse);
+	printf("done switching hosts?\n"); 
 
 /*	XTestFakeButtonEvent(dpy, 3, 1, CurrentTime);
 	XTestFakeButtonEvent(dpy, 3, 0, CurrentTime); */
@@ -195,11 +205,11 @@ void desktopprog_1( char* host, int argc, char *argv[])
 
 
 	while(!quit) { 
-		
+		printf("in while\n"); 
 		XEvent ev; 
 		
 		XNextEvent(dpy, &ev); 
-	
+		printf("after next event\n"); 
 		switch (ev.type) {
 		case ButtonPress:
 /*			keyboard_1_arg.keyboard = 0;
