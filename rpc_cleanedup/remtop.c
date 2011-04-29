@@ -45,30 +45,11 @@ void create_clients(char *host, CLIENT **clnt_keyboard, CLIENT **clnt_mouse)
 {
 	struct timeval maxtime = {3,0};
 
-	printf("creating keyboard\n"); 
-        *clnt_keyboard = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "udp");
-	printf("end creating keyboard\n"); 
-	*clnt_mouse = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp");
-	printf("end creating mouse\n");
-	/*
-	clnt_control( *clnt_keyboard, CLSET_TIMEOUT,(char *)&maxtime);
-	clnt_control( *clnt_mouse, CLSET_TIMEOUT, (char *)&maxtime);
-	*/
-/*
-	if (strncmp(host, "localhost", 10) == 0) {
-		printf("is localhost\n");
-		*isLocalhost = 1;
-	} else {
-		printf("isn't localhost\n");
-		*isLocalhost = 0;
-		} */
 
-/*	
-	if (*clnt_keyboard == NULL) {
-		printf("YEP ITS NULL!\n");
-	} else {
-		printf("Nope it's not null cuz host is %s\n", host);
-		} */
+        *clnt_keyboard = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "udp");
+	*clnt_mouse = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp");
+
+	/* TODO: Check if null independently */
 
         if (*clnt_keyboard == NULL || *clnt_mouse == NULL) {
                 clnt_pcreateerror(host);
