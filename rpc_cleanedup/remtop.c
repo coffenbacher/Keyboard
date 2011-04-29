@@ -26,10 +26,18 @@ int get_next_host_index(int cur_host_index, int argc, int up)
 /*
  Creates the keyboard and mouse clients based on given host name.
  */
-void create_clients(char *host, CLIENT **clnt_keyboard, CLIENT **clnt_mouse)
+void create_clients(char *host, CLIENT **clnt_keyboard, CLIENT **clnt_mouse, int *isLocalhost)
 {
         *clnt_keyboard = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "udp");
-	*clnt_mouse = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp"); 
+	*clnt_mouse = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp");
+
+	if (strncmp(host, "localhost", 10) == 0) {
+		printf("is localhost\n");
+		*isLocalhost = 1;
+	} else {
+		printf("isn't localhost\n");
+		*isLocalhost = 0;
+	}
 
         if (*clnt_keyboard == NULL || *clnt_mouse == NULL) {
                 clnt_pcreateerror(host);
@@ -47,6 +55,40 @@ void destroy_clients(CLIENT *clnt_keyboard, CLIENT *clnt_mouse)
 	clnt_destroy( clnt_mouse ); 
 } /* end destroy_clients */
 
+/* grab keyboard and mouse */
+void grab_hardware(Display *dpy, int isLocalhost)
+{
+	Cursor cursor =  XCreateFontCursor(dpy, XC_arrow); 
+	
+	XGrabKeyboard(dpy, DefaultRootWindow(dpy), 
+		      True, GrabModeAsync, GrabModeAsync, CurrentTime);
+	
+	XGrabPointer(dpy, DefaultRootWindow(dpy), True,
+			     PointerMotionMask| ButtonPressMask |
+			     ButtonReleaseMask,
+			     GrabModeAsync, GrabModeAsync,
+			     DefaultRootWindow(dpy),
+			     cursor, CurrentTime);
+/*	if (!isLocalhost) {
+		XGrabPointer(dpy, DefaultRootWindow(dpy), False,
+			     PointerMotionMask | ButtonPressMask |
+			     ButtonReleaseMask,
+			     GrabModeAsync, GrabModeAsync,
+			     DefaultRootWindow(dpy),
+			     cursor, CurrentTime);
+	} /*else {
+		XAllowEvents(dpy, AsyncPointer, CurrentTime);
+		}*/
+		   
+}
+
+/* ungrab keyboard and mouse */
+void ungrab_hardware(Display *dpy) 
+{
+	XUngrabPointer(dpy, CurrentTime);  
+	XUngrabKeyboard(dpy, CurrentTime); 
+}
+
 void desktopprog_1( char* host, int argc, char *argv[])
 {
         CLIENT *clnt_keyboard, *clnt_mouse;        
@@ -58,15 +100,16 @@ void desktopprog_1( char* host, int argc, char *argv[])
 	int quit = 0;
 	char *s;
 	int on_press; 
-	int kc;
-	Cursor cursor;
-	int x, y, x_root, y_root;
+	int kc, button; 
+
+	int x, y;
+	int isLocalhost = 0; 
      
 
 /*        clnt_keyboard = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "udp");
 	  clnt_mouse = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp"); */
 
-	create_clients(host, &clnt_keyboard, &clnt_mouse); 
+	create_clients(host, &clnt_keyboard, &clnt_mouse, &isLocalhost); 
 
 	/*
         if (clnt_keyboard == NULL || clnt_mouse == NULL) {
@@ -82,22 +125,23 @@ void desktopprog_1( char* host, int argc, char *argv[])
 		perror(argv[0]); 
 		exit(1); 
 	} 
-	
-	cursor = XCreateFontCursor(dpy, XC_arrow);
-	XGrabKeyboard(dpy, DefaultRootWindow(dpy), 
-		      False, GrabModeAsync, GrabModeAsync, CurrentTime);
-	XGrabPointer(dpy, DefaultRootWindow(dpy), False,
-		     PointerMotionMask | ButtonPressMask | ButtonReleaseMask,
-		     GrabModeAsync, GrabModeAsync, DefaultRootWindow(dpy),
-		     cursor, CurrentTime); 
-		   
+
+	grab_hardware(dpy, isLocalhost);
+
+/*	XTestFakeButtonEvent(dpy, 3, 1, CurrentTime);
+	XTestFakeButtonEvent(dpy, 3, 0, CurrentTime); */
+/*	printf("grabbing!\n"); 
+	grab_hardware(dpy, isLocalhost);
+	printf("grabbed!\n"); */
+/*	ungrab_hardware(dpy); */
 
 
 	while(!quit) { 
+		
 		XEvent ev; 
 		
 		XNextEvent(dpy, &ev); 
-		
+	
 		switch (ev.type) {
 		case ButtonPress:
 /*			keyboard_1_arg.keyboard = 0;
@@ -105,24 +149,38 @@ void desktopprog_1( char* host, int argc, char *argv[])
 			keyboard_1_arg.on_press = 1;
 			keyboard_1_arg.button =
 			((XButtonPressedEvent*)&ev)->button; */
+			button = ((XButtonPressedEvent*)&ev)->button;
+			/*	ungrab_hardware(dpy);
+			XTestFakeButtonEvent(dpy, button, 1, CurrentTime);
+			printf("ungrabbed\n"); 
+			grab_hardware(dpy, 1);
+			printf("grabbed again\n"); 
+			break; */ 
+
 			mouse_1_arg.button_event = 1;
 			mouse_1_arg.on_press = 1;
-			mouse_1_arg.button = 
-				((XButtonPressedEvent*)&ev)->button;
+			mouse_1_arg.button = button; 
 			mouse_1(&mouse_1_arg, clnt_mouse);
-			break;
+			break; 
 		case ButtonRelease:
 /*			keyboard_1_arg.keyboard = 0;
 			keyboard_1_arg.button_event = 1;
 			keyboard_1_arg.on_press = 0;
 			keyboard_1_arg.button =
 			((XButtonReleasedEvent*)&ev)->button; */
+
+/*			button = ((XButtonPressedEvent*)&ev)->button;
+			ungrab_hardware(dpy);
+			XTestFakeButtonEvent(dpy, button, 0, CurrentTime);  
+			grab_hardware(dpy, 1); 
+			break; */
+
 			mouse_1_arg.button_event = 1;
 			mouse_1_arg.on_press = 0;
 			mouse_1_arg.button = 
 				((XButtonPressedEvent*)&ev)->button;
 			mouse_1(&mouse_1_arg, clnt_mouse);
-			break;
+			break; 
 		case MotionNotify:
 			/*printf("in motion notify \n"); */
 /*			keyboard_1_arg.keyboard = 0;
@@ -139,7 +197,14 @@ void desktopprog_1( char* host, int argc, char *argv[])
 		case KeyPress: 
 			
 			kc = ((XKeyPressedEvent*)&ev)->keycode;
+		
 			
+/*			if (isLocalhost) {
+				XTestFakeKeyEvent(dpy, kc, 1, CurrentTime);
+				XNextEvent(dpy, &ev);
+				break;
+				
+				} */
 /*			keyboard_1_arg.keyboard = 1; */
 			keyboard_1_arg.on_press = 1;
 			keyboard_1_arg.keycode = kc;
@@ -154,7 +219,13 @@ void desktopprog_1( char* host, int argc, char *argv[])
 			
 		case KeyRelease: 
 			
-			kc = ((XKeyReleasedEvent*)&ev)->keycode; 
+			kc = ((XKeyReleasedEvent*)&ev)->keycode;
+/*			if (isLocalhost) {
+				XTestFakeKeyEvent(dpy, kc, 1, CurrentTime);
+				XNextEvent(dpy, &ev);
+				break;
+				
+				} */
 /*			keyboard_1_arg.keyboard = 1; */
 			keyboard_1_arg.on_press = 0;
 			keyboard_1_arg.keycode = kc;
@@ -173,7 +244,7 @@ void desktopprog_1( char* host, int argc, char *argv[])
 				clnt_destroy( clnt_mouse ); */
 				destroy_clients(clnt_keyboard, clnt_mouse); 
 				create_clients(host, &clnt_keyboard,
-					       &clnt_mouse); 
+					       &clnt_mouse, &isLocalhost); 
 			} else if (!strcmp(s, "Down")) {
 				cur_host_index = get_next_host_index(
 					cur_host_index, argc, 0);
@@ -183,7 +254,7 @@ void desktopprog_1( char* host, int argc, char *argv[])
 				/*clnt_destroy( clnt_keyboard );
 				  clnt_destroy( clnt_mouse ); */
 				create_clients(host, &clnt_keyboard,
-					       &clnt_mouse); 
+					       &clnt_mouse, &isLocalhost); 
 
 			}
 			break;
@@ -196,8 +267,7 @@ void desktopprog_1( char* host, int argc, char *argv[])
 	}/*end while */
 	
 	
-	XUngrabPointer(dpy, CurrentTime); 
-	XUngrabKeyboard(dpy, CurrentTime); 
+	ungrab_hardware(dpy); 
 	
 	if (XCloseDisplay(dpy)) { 
 		perror(argv[0]); 

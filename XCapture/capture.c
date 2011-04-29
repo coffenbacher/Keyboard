@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
    } 
 
    XGrabKeyboard(dpy, DefaultRootWindow(dpy), 
-                 False, GrabModeAsync, GrabModeAsync, CurrentTime); 
+                 True, GrabModeAsync, GrabModeAsync, CurrentTime); 
 
    while(!quit) { 
       XEvent ev; 
