@@ -127,7 +127,7 @@ void ungrab_hardware(Display *dpy)
 void switch_hosts(char *host, Display *dpy, CLIENT **clnt_keyboard,
 		 CLIENT **clnt_mouse) 
 {
-	printf("in switch hosts\n"); 
+
 	if (hostType == LOCALHOST) {
 		ungrab_keycombos(dpy);
 	} else if (hostType == REMOTEHOST) {
@@ -194,7 +194,7 @@ void desktopprog_1( char* host, int argc, char *argv[])
 	  grab_hardware(dpy); */
 
 	switch_hosts(host, dpy, &clnt_keyboard, &clnt_mouse);
-	printf("done switching hosts?\n"); 
+
 
 /*	XTestFakeButtonEvent(dpy, 3, 1, CurrentTime);
 	XTestFakeButtonEvent(dpy, 3, 0, CurrentTime); */
@@ -209,7 +209,7 @@ void desktopprog_1( char* host, int argc, char *argv[])
 		XEvent ev; 
 		
 		XNextEvent(dpy, &ev); 
-		printf("after next event\n"); 
+
 		switch (ev.type) {
 		case ButtonPress:
 /*			keyboard_1_arg.keyboard = 0;
@@ -308,13 +308,16 @@ void desktopprog_1( char* host, int argc, char *argv[])
 					cur_host_index, argc, 1); 
 					host = argv[cur_host_index+1]; */
 				host = get_next_host(&cur_host_index, argc,
-						     argv, 1); 
+						     argv, 1);
+				
 				printf("host%s\n", argv[cur_host_index+1]);
 /*				clnt_destroy( clnt_keyboard );
 				clnt_destroy( clnt_mouse ); */
-				destroy_clients(clnt_keyboard, clnt_mouse); 
+/*				destroy_clients(clnt_keyboard, clnt_mouse); 
 				create_clients(host, &clnt_keyboard,
-					       &clnt_mouse); 
+				&clnt_mouse); */
+				switch_hosts(host, dpy, &clnt_keyboard,
+					     &clnt_mouse);
 			} else if (!strcmp(s, "Down")) {
 /*				cur_host_index = get_next_host_index(
 					cur_host_index, argc, 0);
@@ -322,11 +325,13 @@ void desktopprog_1( char* host, int argc, char *argv[])
 				host = get_next_host(&cur_host_index, argc,
 						     argv, 0); 
 				printf("host%s\n", argv[cur_host_index+1]);
-				destroy_clients(clnt_keyboard, clnt_mouse); 
+				switch_hosts(host, dpy, &clnt_keyboard,
+					     &clnt_mouse);
+			     /*	destroy_clients(clnt_keyboard, clnt_mouse); 
 				/*clnt_destroy( clnt_keyboard );
 				  clnt_destroy( clnt_mouse ); */
-				create_clients(host, &clnt_keyboard,
-					       &clnt_mouse); 
+		 	/*			create_clients(host, &clnt_keyboard,
+						&clnt_mouse); */
 
 			}
 			break;
