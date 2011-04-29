@@ -8,6 +8,20 @@
 #include <string.h>
 
 #define XC_arrow 2
+#define NOHOST 0
+#define LOCALHOST -1
+#define REMOTEHOST 1
+
+int hostType = NOHOST; 
+
+char *get_next_host(int *cur_host_index, int argc, char *argv[], int up)
+{
+	*cur_host_index = get_next_host_index(*cur_host_index, argc, up);
+	/* TODO: Check if legit host */
+	return argv[*cur_host_index+1]; 
+	
+}
+
 int get_next_host_index(int cur_host_index, int argc, int up)
 {
 	int num_hosts = argc-1;
@@ -23,26 +37,43 @@ int get_next_host_index(int cur_host_index, int argc, int up)
 	return next_host_index;
 }
 
+
 /*
  Creates the keyboard and mouse clients based on given host name.
  */
-void create_clients(char *host, CLIENT **clnt_keyboard, CLIENT **clnt_mouse, int *isLocalhost)
+void create_clients(char *host, CLIENT **clnt_keyboard, CLIENT **clnt_mouse)
 {
-        *clnt_keyboard = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "udp");
-	*clnt_mouse = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp");
+	struct timeval maxtime = {3,0};
 
+	printf("creating keyboard\n"); 
+        *clnt_keyboard = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "udp");
+	printf("end creating keyboard\n"); 
+	*clnt_mouse = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp");
+	printf("end creating mouse\n");
+	/*
+	clnt_control( *clnt_keyboard, CLSET_TIMEOUT,(char *)&maxtime);
+	clnt_control( *clnt_mouse, CLSET_TIMEOUT, (char *)&maxtime);
+	*/
+/*
 	if (strncmp(host, "localhost", 10) == 0) {
 		printf("is localhost\n");
 		*isLocalhost = 1;
 	} else {
 		printf("isn't localhost\n");
 		*isLocalhost = 0;
+		} */
+
+/*	
+	if (*clnt_keyboard == NULL) {
+		printf("YEP ITS NULL!\n");
+	} else {
+		printf("Nope it's not null cuz host is %s\n", host);
 	}
 
         if (*clnt_keyboard == NULL || *clnt_mouse == NULL) {
                 clnt_pcreateerror(host);
                 exit(1);
-        }
+		} */
 
 } /* end create_clients */
 
@@ -55,8 +86,18 @@ void destroy_clients(CLIENT *clnt_keyboard, CLIENT *clnt_mouse)
 	clnt_destroy( clnt_mouse ); 
 } /* end destroy_clients */
 
+void grab_keycombos(Display *dpy)
+{
+	/* method stub */
+}
+
+void ungrab_keycombos(Display *dpy)
+{
+	/* method stub */
+}
+
 /* grab keyboard and mouse */
-void grab_hardware(Display *dpy, int isLocalhost)
+void grab_hardware(Display *dpy)
 {
 	Cursor cursor =  XCreateFontCursor(dpy, XC_arrow); 
 	
@@ -69,16 +110,6 @@ void grab_hardware(Display *dpy, int isLocalhost)
 			     GrabModeAsync, GrabModeAsync,
 			     DefaultRootWindow(dpy),
 			     cursor, CurrentTime);
-/*	if (!isLocalhost) {
-		XGrabPointer(dpy, DefaultRootWindow(dpy), False,
-			     PointerMotionMask | ButtonPressMask |
-			     ButtonReleaseMask,
-			     GrabModeAsync, GrabModeAsync,
-			     DefaultRootWindow(dpy),
-			     cursor, CurrentTime);
-	} /*else {
-		XAllowEvents(dpy, AsyncPointer, CurrentTime);
-		}*/
 		   
 }
 
@@ -88,6 +119,31 @@ void ungrab_hardware(Display *dpy)
 	XUngrabPointer(dpy, CurrentTime);  
 	XUngrabKeyboard(dpy, CurrentTime); 
 }
+
+
+
+int switch_hosts(char *host, Display *dpy, CLIENT *clnt_keyboard, CLIENT *clnt_mouse) 
+{
+	if (hostType == LOCALHOST) {
+		ungrab_keycombos(dpy);
+	} else if (hostType == REMOTEHOST) {
+		ungrab_hardware(dpy);
+		destroy_clients(clnt_keyboard, clnt_mouse); 
+	}
+
+	if (strncmp(host, "localhost", 10) == 0) {
+		printf("is localhost\n");
+		hostType = REMOTEHOST; /* TODO: change this to = LOCALHOST */
+		grab_keycombos(dpy); 
+	} else {
+		printf("isn't localhost\n");
+		hostType = REMOTEHOST;
+		create_clients(host, &clnt_keyboard, &clnt_mouse);
+		grab_hardware(dpy); 
+	}
+			
+}
+
 
 void desktopprog_1( char* host, int argc, char *argv[])
 {
@@ -109,7 +165,9 @@ void desktopprog_1( char* host, int argc, char *argv[])
 /*        clnt_keyboard = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "udp");
 	  clnt_mouse = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp"); */
 
-	create_clients(host, &clnt_keyboard, &clnt_mouse, &isLocalhost); 
+	printf("Creating clients \n"); 
+	create_clients(host, &clnt_keyboard, &clnt_mouse); 
+	printf("End Creating clients \n"); 
 
 	/*
         if (clnt_keyboard == NULL || clnt_mouse == NULL) {
@@ -126,7 +184,7 @@ void desktopprog_1( char* host, int argc, char *argv[])
 		exit(1); 
 	} 
 
-	grab_hardware(dpy, isLocalhost);
+	grab_hardware(dpy);
 
 /*	XTestFakeButtonEvent(dpy, 3, 1, CurrentTime);
 	XTestFakeButtonEvent(dpy, 3, 0, CurrentTime); */
@@ -236,25 +294,29 @@ void desktopprog_1( char* host, int argc, char *argv[])
 			/*if(s) printf("KEY released: %s\n", s); */ 
 			if(!strcmp(s, "q")) quit=1;
 			if(!strcmp(s, "Up")) {
-				cur_host_index = get_next_host_index(
-					cur_host_index, argc, 1);
-				host = argv[cur_host_index+1]; 
+/*				cur_host_index = get_next_host_index(
+					cur_host_index, argc, 1); 
+					host = argv[cur_host_index+1]; */
+				host = get_next_host(&cur_host_index, argc,
+						     argv, 1); 
 				printf("host%s\n", argv[cur_host_index+1]);
 /*				clnt_destroy( clnt_keyboard );
 				clnt_destroy( clnt_mouse ); */
 				destroy_clients(clnt_keyboard, clnt_mouse); 
 				create_clients(host, &clnt_keyboard,
-					       &clnt_mouse, &isLocalhost); 
+					       &clnt_mouse); 
 			} else if (!strcmp(s, "Down")) {
-				cur_host_index = get_next_host_index(
+/*				cur_host_index = get_next_host_index(
 					cur_host_index, argc, 0);
-				host = argv[cur_host_index+1]; 
+					host = argv[cur_host_index+1]; */
+				host = get_next_host(&cur_host_index, argc,
+						     argv, 0); 
 				printf("host%s\n", argv[cur_host_index+1]);
 				destroy_clients(clnt_keyboard, clnt_mouse); 
 				/*clnt_destroy( clnt_keyboard );
 				  clnt_destroy( clnt_mouse ); */
 				create_clients(host, &clnt_keyboard,
-					       &clnt_mouse, &isLocalhost); 
+					       &clnt_mouse); 
 
 			}
 			break;
