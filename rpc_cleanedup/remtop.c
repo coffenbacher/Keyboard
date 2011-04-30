@@ -14,6 +14,10 @@
 
 int hostType = NOHOST; 
 
+void switch_hosts(char *host, Display *dpy, CLIENT **clnt_keyboard,
+		  CLIENT **clnt_mouse, int *cur_host_index,
+		  int argc, char *argv[]);
+
 char *get_next_host(int *cur_host_index, int argc, char *argv[], int up)
 {
 	*cur_host_index = get_next_host_index(*cur_host_index, argc, up);
@@ -71,12 +75,38 @@ void destroy_clients(CLIENT *clnt_keyboard, CLIENT *clnt_mouse)
 
 void grab_keycombos(Display *dpy)
 {
-	/* method stub */
+	/*TODO: check for badaccess errors and stuff */
+	int kc;
+	int res;
+	
+	kc = XKeysymToKeycode(dpy, XStringToKeysym("q"));
+	res = XGrabKey(dpy, kc, ControlMask | Mod1Mask,
+	    DefaultRootWindow(dpy), True, GrabModeAsync, 
+	    GrabModeAsync);
+	if (res == BadAccess) {
+		fprintf(stderr, "Bad Acces with q\n"); 
+	}
+	kc = XKeysymToKeycode(dpy, XStringToKeysym("Up"));
+	res = XGrabKey(dpy, kc, ControlMask | ShiftMask,
+	    DefaultRootWindow(dpy), True, GrabModeAsync, 
+	    GrabModeAsync);
+	if (res == BadAccess) {
+		fprintf(stderr, "Bad Acces with Up\n"); 
+	} 
+	kc = XKeysymToKeycode(dpy, XStringToKeysym("Down"));
+	res = XGrabKey(dpy, kc, ControlMask | ShiftMask,
+	    DefaultRootWindow(dpy), True, GrabModeAsync, 
+	    GrabModeAsync);
+	if (res == BadAccess) {
+		fprintf(stderr, "Bad Acces with q\n"); 
+	}
+	printf("Made through all keys..\n"); 
+	
 }
 
 void ungrab_keycombos(Display *dpy)
 {
-	/* method stub */
+	XUngrabKey(dpy, AnyKey, AnyModifier, DefaultRootWindow(dpy)); 
 }
 
 /* grab keyboard and mouse */
@@ -103,33 +133,52 @@ void ungrab_hardware(Display *dpy)
 	XUngrabKeyboard(dpy, CurrentTime); 
 }
 
-
-
-void switch_hosts(char *host, Display *dpy, CLIENT **clnt_keyboard,
-		 CLIENT **clnt_mouse) 
+void localHostLoop(Display *dpy, CLIENT **clnt_keyboard, CLIENT **clnt_mouse,
+		    int *cur_host_index, int argc, char *argv[])
 {
-
-	if (hostType == LOCALHOST) {
-		ungrab_keycombos(dpy);
-	} else if (hostType == REMOTEHOST) {
-		ungrab_hardware(dpy);
-		destroy_clients(*clnt_keyboard, *clnt_mouse); 
-	}
-
-	if (strncmp(host, "localhost", 10) == 0) {
-		printf("is localhost\n");
-		hostType = REMOTEHOST; /* TODO: change this to = LOCALHOST */
-		/*grab_keycombos(dpy);*/   /* TODO: put this line back in */
-		create_clients(host, clnt_keyboard, clnt_mouse); 
-		grab_hardware(dpy); /* TODO: take this and above line out*/
-	} else {
-		printf("isn't localhost\n");
-		hostType = REMOTEHOST;
-		create_clients(host, clnt_keyboard, clnt_mouse);
-		grab_hardware(dpy); 
-	}
+	int quit = 0;
+	int kc;
+	XEvent ev;
+	char *host;
+	char *s; 
+	
+	while(!quit) {
+		XNextEvent(dpy, &ev);
+		switch (ev.type) {
+		case KeyPress:
+			kc = ((XKeyPressedEvent*)&ev)->keycode; 
+			printf("\n%x\n", kc);
+			s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
 			
+			if(s) printf("KEY: %s\n", s);
+			/* TODO: make sure shouldn't be strncmp*/
+			if(!strcmp(s, "q")) {
+				ungrab_keycombos(dpy); 
+				quit=1;
+			}
+			if(!strcmp(s, "Up")) {
+				host = get_next_host(cur_host_index, argc,
+						     argv, 1);
+					
+				switch_hosts(host, dpy, clnt_keyboard,
+					     clnt_mouse, cur_host_index,
+					     argc,  argv);
+				quit = 1;
+			} else if (!strcmp(s, "Down")) {
+				host = get_next_host(cur_host_index, argc,
+						     argv, 0);
+					
+				switch_hosts(host, dpy, clnt_keyboard,
+					     clnt_mouse, cur_host_index,
+					     argc,  argv);
+				quit = 1;
+			}
+			break;
+		}
+	}
+	
 }
+
 
 /* TODO: get proper inputs in here (change argv and argc)*/
 void remoteHostLoop(Display *dpy, CLIENT **clnt_keyboard, CLIENT **clnt_mouse,
@@ -193,21 +242,27 @@ void remoteHostLoop(Display *dpy, CLIENT **clnt_keyboard, CLIENT **clnt_mouse,
 			
 			s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
 			
-			if(!strcmp(s, "q")) quit=1;
+			if(!strcmp(s, "q")) {
+				destroy_clients(*clnt_keyboard, *clnt_mouse); 
+				quit=1;
+			}
 			if(!strcmp(s, "Up")) {
 				host = get_next_host(cur_host_index, argc,
 						     argv, 1);
-				
-				
+					
 				switch_hosts(host, dpy, clnt_keyboard,
-					     clnt_mouse);
+					     clnt_mouse, cur_host_index,
+					     argc,  argv);
+				quit = 1;
 			} else if (!strcmp(s, "Down")) {
 
 				host = get_next_host(cur_host_index, argc,
 						     argv, 0); 
 
 				switch_hosts(host, dpy, clnt_keyboard,
-					     clnt_mouse);
+					     clnt_mouse, cur_host_index,
+					     argc, argv);
+				quit = 1;
 
 			}
 			break;
@@ -218,6 +273,42 @@ void remoteHostLoop(Display *dpy, CLIENT **clnt_keyboard, CLIENT **clnt_mouse,
 	}/*end while */
 
 }
+
+
+/* TODO: Change argc, argv...*/
+void switch_hosts(char *host, Display *dpy, CLIENT **clnt_keyboard,
+		  CLIENT **clnt_mouse, int *cur_host_index,
+		  int argc, char *argv[]) 
+{
+
+	if (hostType == LOCALHOST) {
+		ungrab_keycombos(dpy);
+	} else if (hostType == REMOTEHOST) {
+		ungrab_hardware(dpy);
+		destroy_clients(*clnt_keyboard, *clnt_mouse); 
+	}
+
+	if (strncmp(host, "localhost", 10) == 0) {
+		printf("is localhost\n");
+		hostType = LOCALHOST; 
+		grab_keycombos(dpy);   /* TODO: put this line back in */
+		localHostLoop(dpy, clnt_keyboard, clnt_mouse,
+			      cur_host_index, argc, argv); 
+		/*create_clients(host, clnt_keyboard, clnt_mouse); */
+		/*grab_hardware(dpy); /* TODO: take this and above line out*/
+		/*remoteHostLoop(dpy, clnt_keyboard, clnt_mouse,
+			       cur_host_index, argc, argv); /* TODO: take out*/ 
+	} else {
+		printf("isn't localhost\n");
+		hostType = REMOTEHOST;
+		create_clients(host, clnt_keyboard, clnt_mouse);
+		grab_hardware(dpy);
+		remoteHostLoop(dpy, clnt_keyboard, clnt_mouse,
+			       cur_host_index, argc, argv);
+	}
+			
+}
+
 
 void desktopprog_1( char* host, int argc, char *argv[])
 {
@@ -248,11 +339,9 @@ void desktopprog_1( char* host, int argc, char *argv[])
 	/*
 	  grab_hardware(dpy); */
 
-	switch_hosts(host, dpy, &clnt_keyboard, &clnt_mouse);
+	switch_hosts(host, dpy, &clnt_keyboard, &clnt_mouse, &cur_host_index,
+		     argc, argv);
 
-
-	remoteHostLoop(dpy, &clnt_keyboard, &clnt_mouse, &cur_host_index,
-		       argc, argv); 
 /*
 	while(!quit) { 
 		printf("in while\n"); 
@@ -347,7 +436,7 @@ void desktopprog_1( char* host, int argc, char *argv[])
 /*        clnt_destroy( clnt_keyboard );
 	  clnt_destroy( clnt_mouse );  */
 
-	destroy_clients(clnt_keyboard, clnt_mouse); 
+	/*destroy_clients(clnt_keyboard, clnt_mouse); */
         /*printf("average = %e\n", *result_1); */
 	printf("done? \n"); 
 }
