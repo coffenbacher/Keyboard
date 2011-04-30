@@ -43,7 +43,7 @@ int get_next_host_index(int cur_host_index, int argc, int up)
  */
 void create_clients(char *host, CLIENT **clnt_keyboard, CLIENT **clnt_mouse)
 {
-	struct timeval maxtime = {3,0};
+
 
 
         *clnt_keyboard = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "udp");
@@ -54,8 +54,8 @@ void create_clients(char *host, CLIENT **clnt_keyboard, CLIENT **clnt_mouse)
         if (*clnt_keyboard == NULL || *clnt_mouse == NULL) {
                 clnt_pcreateerror(host);
                 exit(1);
-		} 
-
+	} 
+	
 } /* end create_clients */
 
 /*
@@ -131,6 +131,93 @@ void switch_hosts(char *host, Display *dpy, CLIENT **clnt_keyboard,
 			
 }
 
+/* TODO: get proper inputs in here (change argv and argc)*/
+void remoteHostLoop(Display *dpy, CLIENT **clnt_keyboard, CLIENT **clnt_mouse,
+		    int *cur_host_index, int argc, char *argv[]) 
+{
+	int quit = 0;
+	key_input keyboard_1_arg; 
+	mouse_input mouse_1_arg;
+	XEvent ev;
+	char *host;
+	int button;
+	int x, y, kc;
+	char *s; 
+	/*TODO: change key_input and mouse_input to be * so more like what
+	 we learned -> don't forget to malloc! */
+	
+	while(!quit) { 
+
+		XNextEvent(dpy, &ev); 
+
+		switch (ev.type) {
+		case ButtonPress:
+			button = ((XButtonPressedEvent*)&ev)->button;
+			mouse_1_arg.button_event = 1;
+			mouse_1_arg.on_press = 1;
+			mouse_1_arg.button = button; 
+			mouse_1(&mouse_1_arg, *clnt_mouse);
+			break; 
+		case ButtonRelease:
+			mouse_1_arg.button_event = 1;
+			mouse_1_arg.on_press = 0;
+			mouse_1_arg.button = 
+				((XButtonPressedEvent*)&ev)->button;
+			mouse_1(&mouse_1_arg, *clnt_mouse);
+			break; 
+		case MotionNotify:
+			x = ((XPointerMovedEvent*)&ev)->x;
+			y = ((XPointerMovedEvent*)&ev)->y;
+		        mouse_1_arg.x = x;
+			mouse_1_arg.y = y;
+			mouse_1_arg.button_event = 0; 
+			mouse_1(&mouse_1_arg, *clnt_mouse);
+			break;
+
+		case KeyPress: 
+			
+			kc = ((XKeyPressedEvent*)&ev)->keycode;
+			keyboard_1_arg.on_press = 1;
+			keyboard_1_arg.keycode = kc;
+			keyboard_1(&keyboard_1_arg, *clnt_keyboard);
+			s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
+			break;
+			
+			
+		case KeyRelease: 
+			
+			kc = ((XKeyReleasedEvent*)&ev)->keycode;
+			keyboard_1_arg.on_press = 0;
+			keyboard_1_arg.keycode = kc;
+			keyboard_1(&keyboard_1_arg, *clnt_keyboard); 
+			
+			s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
+			
+			if(!strcmp(s, "q")) quit=1;
+			if(!strcmp(s, "Up")) {
+				host = get_next_host(cur_host_index, argc,
+						     argv, 1);
+				
+				
+				switch_hosts(host, dpy, clnt_keyboard,
+					     clnt_mouse);
+			} else if (!strcmp(s, "Down")) {
+
+				host = get_next_host(cur_host_index, argc,
+						     argv, 0); 
+
+				switch_hosts(host, dpy, clnt_keyboard,
+					     clnt_mouse);
+
+			}
+			break;
+
+		 
+		} 
+		
+	}/*end while */
+
+}
 
 void desktopprog_1( char* host, int argc, char *argv[])
 {
@@ -149,19 +236,6 @@ void desktopprog_1( char* host, int argc, char *argv[])
 	int isLocalhost = 0; 
      
 
-/*        clnt_keyboard = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "udp");
-	  clnt_mouse = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp"); */
-
-/*	printf("Creating clients \n"); 
-	create_clients(host, &clnt_keyboard, &clnt_mouse); 
-	printf("End Creating clients \n"); */
-
-	/*
-        if (clnt_keyboard == NULL || clnt_mouse == NULL) {
-                clnt_pcreateerror(host);
-                exit(1);
-		} */
-
 
 	/*******************************************/
 	/** XCapture stuff **/
@@ -177,14 +251,9 @@ void desktopprog_1( char* host, int argc, char *argv[])
 	switch_hosts(host, dpy, &clnt_keyboard, &clnt_mouse);
 
 
-/*	XTestFakeButtonEvent(dpy, 3, 1, CurrentTime);
-	XTestFakeButtonEvent(dpy, 3, 0, CurrentTime); */
-/*	printf("grabbing!\n"); 
-	grab_hardware(dpy, isLocalhost);
-	printf("grabbed!\n"); */
-/*	ungrab_hardware(dpy); */
-
-
+	remoteHostLoop(dpy, &clnt_keyboard, &clnt_mouse, &cur_host_index,
+		       argc, argv); 
+/*
 	while(!quit) { 
 		printf("in while\n"); 
 		XEvent ev; 
@@ -193,37 +262,13 @@ void desktopprog_1( char* host, int argc, char *argv[])
 
 		switch (ev.type) {
 		case ButtonPress:
-/*			keyboard_1_arg.keyboard = 0;
-			keyboard_1_arg.button_event = 1;
-			keyboard_1_arg.on_press = 1;
-			keyboard_1_arg.button =
-			((XButtonPressedEvent*)&ev)->button; */
 			button = ((XButtonPressedEvent*)&ev)->button;
-			/*	ungrab_hardware(dpy);
-			XTestFakeButtonEvent(dpy, button, 1, CurrentTime);
-			printf("ungrabbed\n"); 
-			grab_hardware(dpy, 1);
-			printf("grabbed again\n"); 
-			break; */ 
-
 			mouse_1_arg.button_event = 1;
 			mouse_1_arg.on_press = 1;
 			mouse_1_arg.button = button; 
 			mouse_1(&mouse_1_arg, clnt_mouse);
 			break; 
 		case ButtonRelease:
-/*			keyboard_1_arg.keyboard = 0;
-			keyboard_1_arg.button_event = 1;
-			keyboard_1_arg.on_press = 0;
-			keyboard_1_arg.button =
-			((XButtonReleasedEvent*)&ev)->button; */
-
-/*			button = ((XButtonPressedEvent*)&ev)->button;
-			ungrab_hardware(dpy);
-			XTestFakeButtonEvent(dpy, button, 0, CurrentTime);  
-			grab_hardware(dpy, 1); 
-			break; */
-
 			mouse_1_arg.button_event = 1;
 			mouse_1_arg.on_press = 0;
 			mouse_1_arg.button = 
@@ -231,96 +276,54 @@ void desktopprog_1( char* host, int argc, char *argv[])
 			mouse_1(&mouse_1_arg, clnt_mouse);
 			break; 
 		case MotionNotify:
-			/*printf("in motion notify \n"); */
-/*			keyboard_1_arg.keyboard = 0;
-			keyboard_1_arg.button_event = 0; */
 			x = ((XPointerMovedEvent*)&ev)->x;
 			y = ((XPointerMovedEvent*)&ev)->y;
 		        mouse_1_arg.x = x;
 			mouse_1_arg.y = y;
 			mouse_1_arg.button_event = 0; 
 			mouse_1(&mouse_1_arg, clnt_mouse);
-			/*mouse_1(&mouse_1_arg, clnt2); */ 
 			break;
 
 		case KeyPress: 
 			
 			kc = ((XKeyPressedEvent*)&ev)->keycode;
-		
-			
-/*			if (isLocalhost) {
-				XTestFakeKeyEvent(dpy, kc, 1, CurrentTime);
-				XNextEvent(dpy, &ev);
-				break;
-				
-				} */
-/*			keyboard_1_arg.keyboard = 1; */
 			keyboard_1_arg.on_press = 1;
 			keyboard_1_arg.keycode = kc;
 			keyboard_1(&keyboard_1_arg, clnt_keyboard);
-			/*printf("\n%x\n", kc); */
 			s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
-			
-			/*if(s) printf("KEY: %s\n", s);*/ 
-	
 			break;
 			
 			
 		case KeyRelease: 
 			
 			kc = ((XKeyReleasedEvent*)&ev)->keycode;
-/*			if (isLocalhost) {
-				XTestFakeKeyEvent(dpy, kc, 1, CurrentTime);
-				XNextEvent(dpy, &ev);
-				break;
-				
-				} */
-/*			keyboard_1_arg.keyboard = 1; */
 			keyboard_1_arg.on_press = 0;
 			keyboard_1_arg.keycode = kc;
 			keyboard_1(&keyboard_1_arg, clnt_keyboard); 
 			
 			s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
 			
-			/*if(s) printf("KEY released: %s\n", s); */ 
 			if(!strcmp(s, "q")) quit=1;
 			if(!strcmp(s, "Up")) {
-/*				cur_host_index = get_next_host_index(
-					cur_host_index, argc, 1); 
-					host = argv[cur_host_index+1]; */
 				host = get_next_host(&cur_host_index, argc,
 						     argv, 1);
 				
 				printf("host%s\n", argv[cur_host_index+1]);
-/*				clnt_destroy( clnt_keyboard );
-				clnt_destroy( clnt_mouse ); */
-/*				destroy_clients(clnt_keyboard, clnt_mouse); 
-				create_clients(host, &clnt_keyboard,
-				&clnt_mouse); */
 				switch_hosts(host, dpy, &clnt_keyboard,
 					     &clnt_mouse);
 			} else if (!strcmp(s, "Down")) {
-/*				cur_host_index = get_next_host_index(
-					cur_host_index, argc, 0);
-					host = argv[cur_host_index+1]; */
+
 				host = get_next_host(&cur_host_index, argc,
 						     argv, 0); 
 				printf("host%s\n", argv[cur_host_index+1]);
 				switch_hosts(host, dpy, &clnt_keyboard,
 					     &clnt_mouse);
-			     /*	destroy_clients(clnt_keyboard, clnt_mouse); 
-				/*clnt_destroy( clnt_keyboard );
-				  clnt_destroy( clnt_mouse ); */
-		 	/*			create_clients(host, &clnt_keyboard,
-						&clnt_mouse); */
 
 			}
 			break;
 
 		 
 			} 
-		
-
 		
 	}/*end while */
 	
