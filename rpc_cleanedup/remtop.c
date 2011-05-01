@@ -133,7 +133,7 @@ void ungrab_hardware(Display *dpy)
 	XUngrabKeyboard(dpy, CurrentTime); 
 }
 
-void localHostLoop(Display *dpy, CLIENT **clnt_keyboard, CLIENT **clnt_mouse,
+void localhostLoop(Display *dpy, CLIENT **clnt_keyboard, CLIENT **clnt_mouse,
 		    int *cur_host_index, int argc, char *argv[])
 {
 	int quit = 0;
@@ -155,8 +155,7 @@ void localHostLoop(Display *dpy, CLIENT **clnt_keyboard, CLIENT **clnt_mouse,
 			if(!strcmp(s, "q")) {
 				ungrab_keycombos(dpy); 
 				quit=1;
-			}
-			if(!strcmp(s, "Up")) {
+			} else if(!strcmp(s, "Up")) {
 				host = get_next_host(cur_host_index, argc,
 						     argv, 1);
 					
@@ -192,6 +191,7 @@ void remoteHostLoop(Display *dpy, CLIENT **clnt_keyboard, CLIENT **clnt_mouse,
 	int button;
 	int x, y, kc;
 	char *s; 
+	int shift_down = 0, ctrl_down = 0, alt_down = 0; 
 	/*TODO: change key_input and mouse_input to be * so more like what
 	 we learned -> don't forget to malloc! */
 	
@@ -229,7 +229,35 @@ void remoteHostLoop(Display *dpy, CLIENT **clnt_keyboard, CLIENT **clnt_mouse,
 			keyboard_1_arg.on_press = 1;
 			keyboard_1_arg.keycode = kc;
 			keyboard_1(&keyboard_1_arg, *clnt_keyboard);
-			s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
+			s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0));
+			if (!strncmp(s, "Alt", 3)) alt_down = 1;
+			if (!strncmp(s, "Control", 7)) ctrl_down = 1;
+			if (!strncmp(s, "Shift", 5)) shift_down = 1;
+
+			if(!strcmp(s, "q") && ctrl_down && alt_down) {
+				destroy_clients(*clnt_keyboard, *clnt_mouse); 
+				quit=1;
+			} else if(!strcmp(s, "Up") && ctrl_down && shift_down) {
+				host = get_next_host(cur_host_index, argc,
+						     argv, 1);
+					
+				switch_hosts(host, dpy, clnt_keyboard,
+					     clnt_mouse, cur_host_index,
+					     argc,  argv);
+				quit = 1;
+			} else if (!strcmp(s, "Down") && ctrl_down
+				   && shift_down) {
+
+				host = get_next_host(cur_host_index, argc,
+						     argv, 0); 
+
+				switch_hosts(host, dpy, clnt_keyboard,
+					     clnt_mouse, cur_host_index,
+					     argc, argv);
+				quit = 1;
+
+			}
+
 			break;
 			
 			
@@ -241,30 +269,11 @@ void remoteHostLoop(Display *dpy, CLIENT **clnt_keyboard, CLIENT **clnt_mouse,
 			keyboard_1(&keyboard_1_arg, *clnt_keyboard); 
 			
 			s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
+			if (!strncmp(s, "Alt", 3)) alt_down = 0;
+			if (!strncmp(s, "Control", 7)) ctrl_down = 0;
+			if (!strncmp(s, "Shift", 5)) shift_down = 0;
 			
-			if(!strcmp(s, "q")) {
-				destroy_clients(*clnt_keyboard, *clnt_mouse); 
-				quit=1;
-			}
-			if(!strcmp(s, "Up")) {
-				host = get_next_host(cur_host_index, argc,
-						     argv, 1);
-					
-				switch_hosts(host, dpy, clnt_keyboard,
-					     clnt_mouse, cur_host_index,
-					     argc,  argv);
-				quit = 1;
-			} else if (!strcmp(s, "Down")) {
-
-				host = get_next_host(cur_host_index, argc,
-						     argv, 0); 
-
-				switch_hosts(host, dpy, clnt_keyboard,
-					     clnt_mouse, cur_host_index,
-					     argc, argv);
-				quit = 1;
-
-			}
+			
 			break;
 
 		 
@@ -292,7 +301,7 @@ void switch_hosts(char *host, Display *dpy, CLIENT **clnt_keyboard,
 		printf("is localhost\n");
 		hostType = LOCALHOST; 
 		grab_keycombos(dpy);   /* TODO: put this line back in */
-		localHostLoop(dpy, clnt_keyboard, clnt_mouse,
+		localhostLoop(dpy, clnt_keyboard, clnt_mouse,
 			      cur_host_index, argc, argv); 
 		/*create_clients(host, clnt_keyboard, clnt_mouse); */
 		/*grab_hardware(dpy); /* TODO: take this and above line out*/
