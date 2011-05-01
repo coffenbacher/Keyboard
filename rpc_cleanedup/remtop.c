@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <X11/Xlib.h>
 #include <string.h>
+#include <netdb.h>
+
 
 #define XC_arrow 2
 #define NOHOST 0
@@ -262,7 +264,6 @@ void remoteHostLoop(Display *dpy, CLIENT **clnt_keyboard, CLIENT **clnt_mouse,
 			
 			
 		case KeyRelease: 
-			
 			kc = ((XKeyReleasedEvent*)&ev)->keycode;
 			keyboard_1_arg.on_press = 0;
 			keyboard_1_arg.keycode = kc;
@@ -272,11 +273,7 @@ void remoteHostLoop(Display *dpy, CLIENT **clnt_keyboard, CLIENT **clnt_mouse,
 			if (!strncmp(s, "Alt", 3)) alt_down = 0;
 			if (!strncmp(s, "Control", 7)) ctrl_down = 0;
 			if (!strncmp(s, "Shift", 5)) shift_down = 0;
-			
-			
 			break;
-
-		 
 		} 
 		
 	}/*end while */
@@ -318,6 +315,30 @@ void switch_hosts(char *host, Display *dpy, CLIENT **clnt_keyboard,
 			
 }
 
+void get_localIPs()
+{
+	int MAXHOSTNAMELENGTH = 2040;
+	char hostname[MAXHOSTNAMELENGTH];
+	struct hostent *host_info;
+	char *addr;
+	char **h_addr_list;
+	int counter = 0; 
+	/* TODO: Check for errors */
+	gethostname(hostname, MAXHOSTNAMELENGTH);
+	printf("%s\n", hostname);
+	host_info = gethostbyname(hostname);
+	h_addr_list = host_info->h_addr_list;
+	/*while ((addr = h_addr_list[counter++]) != NULL) {
+		printf("%s\n", addr); 
+		}*/
+	printf("%s\n", host_info->h_addr); 
+
+	while ((addr =  host_info->h_addr_list[counter++])!=NULL) {
+		printf("%s\n",
+		       (char *)inet_ntoa( *( struct in_addr*)
+					  (addr))); 
+	}
+}
 
 void desktopprog_1( char* host, int argc, char *argv[])
 {
@@ -335,7 +356,7 @@ void desktopprog_1( char* host, int argc, char *argv[])
 	int x, y;
 	int isLocalhost = 0; 
      
-
+	get_localIPs(); 
 
 	/*******************************************/
 	/** XCapture stuff **/
@@ -351,79 +372,6 @@ void desktopprog_1( char* host, int argc, char *argv[])
 	switch_hosts(host, dpy, &clnt_keyboard, &clnt_mouse, &cur_host_index,
 		     argc, argv);
 
-/*
-	while(!quit) { 
-		printf("in while\n"); 
-		XEvent ev; 
-		
-		XNextEvent(dpy, &ev); 
-
-		switch (ev.type) {
-		case ButtonPress:
-			button = ((XButtonPressedEvent*)&ev)->button;
-			mouse_1_arg.button_event = 1;
-			mouse_1_arg.on_press = 1;
-			mouse_1_arg.button = button; 
-			mouse_1(&mouse_1_arg, clnt_mouse);
-			break; 
-		case ButtonRelease:
-			mouse_1_arg.button_event = 1;
-			mouse_1_arg.on_press = 0;
-			mouse_1_arg.button = 
-				((XButtonPressedEvent*)&ev)->button;
-			mouse_1(&mouse_1_arg, clnt_mouse);
-			break; 
-		case MotionNotify:
-			x = ((XPointerMovedEvent*)&ev)->x;
-			y = ((XPointerMovedEvent*)&ev)->y;
-		        mouse_1_arg.x = x;
-			mouse_1_arg.y = y;
-			mouse_1_arg.button_event = 0; 
-			mouse_1(&mouse_1_arg, clnt_mouse);
-			break;
-
-		case KeyPress: 
-			
-			kc = ((XKeyPressedEvent*)&ev)->keycode;
-			keyboard_1_arg.on_press = 1;
-			keyboard_1_arg.keycode = kc;
-			keyboard_1(&keyboard_1_arg, clnt_keyboard);
-			s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
-			break;
-			
-			
-		case KeyRelease: 
-			
-			kc = ((XKeyReleasedEvent*)&ev)->keycode;
-			keyboard_1_arg.on_press = 0;
-			keyboard_1_arg.keycode = kc;
-			keyboard_1(&keyboard_1_arg, clnt_keyboard); 
-			
-			s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
-			
-			if(!strcmp(s, "q")) quit=1;
-			if(!strcmp(s, "Up")) {
-				host = get_next_host(&cur_host_index, argc,
-						     argv, 1);
-				
-				printf("host%s\n", argv[cur_host_index+1]);
-				switch_hosts(host, dpy, &clnt_keyboard,
-					     &clnt_mouse);
-			} else if (!strcmp(s, "Down")) {
-
-				host = get_next_host(&cur_host_index, argc,
-						     argv, 0); 
-				printf("host%s\n", argv[cur_host_index+1]);
-				switch_hosts(host, dpy, &clnt_keyboard,
-					     &clnt_mouse);
-
-			}
-			break;
-
-		 
-			} 
-		
-	}/*end while */
 	
 	
 	ungrab_hardware(dpy); 
