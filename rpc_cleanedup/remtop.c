@@ -327,16 +327,29 @@ void get_localIPs()
 	gethostname(hostname, MAXHOSTNAMELENGTH);
 	printf("%s\n", hostname);
 	host_info = gethostbyname(hostname);
-	h_addr_list = host_info->h_addr_list;
+
 	/*while ((addr = h_addr_list[counter++]) != NULL) {
 		printf("%s\n", addr); 
 		}*/
-	printf("%s\n", host_info->h_addr); 
+	printf("%s\n", host_info->h_name);
+	
 
+	/* Borrowed the line:
+	   "printf( "%s ", inet_ntoa( *( struct in_addr*)
+	   ( hp -> h_addr_list[i])));"
+	 from http://paulschreiber.com/blog/2005/10/28/
+	 simple-gethostbyname-example/
+	
+	I added the (char *) parsing to make it work properly */
 	while ((addr =  host_info->h_addr_list[counter++])!=NULL) {
 		printf("%s\n",
 		       (char *)inet_ntoa( *( struct in_addr*)
 					  (addr))); 
+	}
+	counter = 0;
+	while ((addr =  host_info->h_aliases[counter++])!=NULL) {
+		printf("%s\n",
+		       (char *)(addr)); 
 	}
 }
 
@@ -398,10 +411,62 @@ void desktopprog_1( char* host, int argc, char *argv[])
 	printf("done? \n"); 
 }
 
+char **create_hostname_list(int argc, char *argv[])
+{
+	char **hostnames;
+	int i = 0;
+	int len;
 
+	int MAXHOSTNAMELENGTH = 2040;
+	char hostname[MAXHOSTNAMELENGTH];
+	struct hostent *host_info;
+	char *addr;
+	char **h_addr_list;
+	int counter = 0; 
+	/* TODO: Check for errors */
+	gethostname(hostname, MAXHOSTNAMELENGTH);
+	printf("%s\n", hostname);
+	host_info = gethostbyname(hostname);
+
+	/*while ((addr = h_addr_list[counter++]) != NULL) {
+		printf("%s\n", addr); 
+		}*/
+	printf("%s\n", host_info->h_name);
+	
+
+	/* Borrowed the line:
+	   "printf( "%s ", inet_ntoa( *( struct in_addr*)
+	   ( hp -> h_addr_list[i])));"
+	 from http://paulschreiber.com/blog/2005/10/28/
+	 simple-gethostbyname-example/
+	
+	I added the (char *) parsing to make it work properly */
+
+	/* TODO: check malloc errors */
+	hostnames = (char **) malloc((argc-1) * sizeof(char *));
+	for (i = 0; i < argc-1; i++) {
+		
+		hostnames[i] = (char *)
+			malloc((strlen(argv[i+1]) + 1) * sizeof(char));
+		strcpy(hostnames[i], argv[i+1]); 
+	}
+	return hostnames; 
+}
+
+
+void destroy_hostname_list(int num_hosts, char **hostnames)
+{
+	int i = 0;
+	for (i = 0; i < num_hosts; i++) {
+		free(hostnames[i]); 
+	}
+	free(hostnames);
+}
 main( int argc, char* argv[] )
 {
         char *host;
+	int num_hosts = argc-1; 
+	char **hostnames = create_hostname_list(argc, argv);
 
         if (argc < 2) {
                 printf("usage: %s server_host value \n",
@@ -414,4 +479,7 @@ main( int argc, char* argv[] )
         }
         host = argv[1];
         desktopprog_1(host, argc, argv);
+	destroy_hostname_list(num_hosts, hostnames); 
+
+	
 }
