@@ -24,7 +24,7 @@ TODO: struct for clients
 #include <X11/Xlib.h>
 #include <string.h>
 #include <netdb.h>
-
+#include <errno.h>
 
 #define XC_arrow 2
 #define NOHOST 0
@@ -33,6 +33,15 @@ TODO: struct for clients
 #define MAXHOSTLENGTH 1024
 
 int hostType = NOHOST; 
+
+struct hosts_data_s{
+	int cur_host_type;
+	int num_hosts;
+	char **hostnames;	
+	int cur_host_index; 
+};
+
+typedef struct hosts_data_s *hosts_data_t;
 
 void switch_hosts(char *host, Display *dpy, CLIENT **clnt_keyboard,
 		  CLIENT **clnt_mouse, int *cur_host_index,
@@ -525,11 +534,39 @@ void destroy_hostname_list(int num_hosts, char **hostnames)
 	}
 	free(hostnames);
 }
+
+hosts_data_t create_hosts_data(int argc, char* argv[])
+{
+	hosts_data_t hosts_data;
+
+	if ((hosts_data = (hosts_data_t) malloc(sizeof(struct hosts_data_s)))
+	     == NULL ) {
+		perror("main"); 
+		exit(errno); 
+	}
+	hosts_data->cur_host_type = NOHOST;
+	hosts_data->num_hosts = argc-1;
+	hosts_data->cur_host_index = 0;
+	hosts_data->hostnames = create_hostname_list(argc, argv);
+
+	return hosts_data; 
+}
+
+void destroy_hosts_data(hosts_data_t hosts_data)
+{
+	destroy_hostname_list(hosts_data->num_hosts, hosts_data->hostnames);
+	free(hosts_data); 
+}
+
 main( int argc, char* argv[] )
 {
         char *host;
 	int num_hosts = argc-1; 
-	char **hostnames = create_hostname_list(argc, argv);
+	
+	hosts_data_t hosts_data = create_hosts_data(argc, argv); 
+
+	
+
 
         if (argc < 2) {
                 printf("usage: %s server_host value \n",
@@ -541,8 +578,10 @@ main( int argc, char* argv[] )
                 exit(2);
         }
         host = argv[1];
-        desktopprog_1(host, num_hosts, hostnames);
-	destroy_hostname_list(num_hosts, hostnames); 
-
+        desktopprog_1(host, hosts_data->num_hosts, hosts_data->hostnames);
+	
+	destroy_hosts_data(hosts_data); 
 	
 }
+
+
