@@ -1,6 +1,23 @@
 /* Remote average client code.
  * Taken from http://www.linuxjournal.com/articles/lj/0042/2204/2204l4.html
  */
+
+/*
+TODO: strcmp vs. strncmp
+ */
+
+/*
+TODO: struct for clients
+ */
+
+/*
+ TODO: Struct for host_data
+ */
+
+/*
+ TODO: split switch_host to switch_to_prev_host, next_host, and localhost
+ */
+
 #include "remtop.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -13,6 +30,7 @@
 #define NOHOST 0
 #define LOCALHOST -1
 #define REMOTEHOST 1
+#define MAXHOSTLENGTH 1024
 
 int hostType = NOHOST; 
 
@@ -24,13 +42,13 @@ char *get_next_host(int *cur_host_index, int argc, char *argv[], int up)
 {
 	*cur_host_index = get_next_host_index(*cur_host_index, argc, up);
 	/* TODO: Check if legit host */
-	return argv[*cur_host_index+1]; 
+	return argv[*cur_host_index]; 
 	
 }
 
-int get_next_host_index(int cur_host_index, int argc, int up)
+int get_next_host_index(int cur_host_index, int num_hosts, int up)
 {
-	int num_hosts = argc-1;
+
 	int next_host_index;
 
 	printf("num hosts: %d\n", num_hosts); 
@@ -100,7 +118,14 @@ void grab_keycombos(Display *dpy)
 	    DefaultRootWindow(dpy), True, GrabModeAsync, 
 	    GrabModeAsync);
 	if (res == BadAccess) {
-		fprintf(stderr, "Bad Acces with q\n"); 
+		fprintf(stderr, "Bad Acces with Down\n"); 
+	}
+	kc = XKeysymToKeycode(dpy, XStringToKeysym("l"));
+	res = XGrabKey(dpy, kc, ControlMask | ShiftMask,
+	    DefaultRootWindow(dpy), True, GrabModeAsync, 
+	    GrabModeAsync);
+	if (res == BadAccess) {
+		fprintf(stderr, "Bad Acces with l\n"); 
 	}
 	printf("Made through all keys..\n"); 
 	
@@ -173,6 +198,11 @@ void localhostLoop(Display *dpy, CLIENT **clnt_keyboard, CLIENT **clnt_mouse,
 					     clnt_mouse, cur_host_index,
 					     argc,  argv);
 				quit = 1;
+			} else if (!strcmp(s, "l")) {
+				switch_hosts("localhost", dpy, clnt_keyboard,
+					     clnt_mouse, cur_host_index,
+					     argc,  argv);
+				quit = 1; 
 			}
 			break;
 		}
@@ -254,6 +284,16 @@ void remoteHostLoop(Display *dpy, CLIENT **clnt_keyboard, CLIENT **clnt_mouse,
 						     argv, 0); 
 
 				switch_hosts(host, dpy, clnt_keyboard,
+					     clnt_mouse, cur_host_index,
+					     argc, argv);
+				quit = 1;
+
+			} else if (!strcmp(s, "l") && ctrl_down
+				   && shift_down) {
+
+				
+
+				switch_hosts("localhost", dpy, clnt_keyboard,
 					     clnt_mouse, cur_host_index,
 					     argc, argv);
 				quit = 1;
@@ -411,6 +451,36 @@ void desktopprog_1( char* host, int argc, char *argv[])
 	printf("done? \n"); 
 }
 
+int is_localhost(char *host, struct hostent *host_info)
+{
+	char *addr;
+	int counter = 0;
+	if (!strncmp(host, "localhost", 10)) return 1; 
+	
+	if (!strncmp(host, host_info->h_name, MAXHOSTLENGTH)) return 1;
+
+	/* Borrowed the line:
+	   "printf( "%s ", inet_ntoa( *( struct in_addr*)
+	   ( hp -> h_addr_list[i])));"
+	 from http://paulschreiber.com/blog/2005/10/28/
+	 simple-gethostbyname-example/
+	
+	I added the (char *) parsing to make it work properly */
+	while ((addr =  host_info->h_addr_list[counter++])!=NULL) {
+		if (!strncmp(host, (char *)inet_ntoa(
+				     *( struct in_addr*)(addr)),
+			    MAXHOSTLENGTH)) return 1;
+
+	}
+	
+	counter = 0;
+	while ((addr =  host_info->h_aliases[counter++])!=NULL) {
+		if (!strncmp(host, (char *)(addr), MAXHOSTLENGTH)) return 1; 
+		
+	}
+	return 0;
+}
+
 char **create_hostname_list(int argc, char *argv[])
 {
 	char **hostnames;
@@ -427,28 +497,21 @@ char **create_hostname_list(int argc, char *argv[])
 	gethostname(hostname, MAXHOSTNAMELENGTH);
 	printf("%s\n", hostname);
 	host_info = gethostbyname(hostname);
-
-	/*while ((addr = h_addr_list[counter++]) != NULL) {
-		printf("%s\n", addr); 
-		}*/
-	printf("%s\n", host_info->h_name);
-	
-
-	/* Borrowed the line:
-	   "printf( "%s ", inet_ntoa( *( struct in_addr*)
-	   ( hp -> h_addr_list[i])));"
-	 from http://paulschreiber.com/blog/2005/10/28/
-	 simple-gethostbyname-example/
-	
-	I added the (char *) parsing to make it work properly */
-
-	/* TODO: check malloc errors */
 	hostnames = (char **) malloc((argc-1) * sizeof(char *));
+
 	for (i = 0; i < argc-1; i++) {
-		
-		hostnames[i] = (char *)
-			malloc((strlen(argv[i+1]) + 1) * sizeof(char));
-		strcpy(hostnames[i], argv[i+1]); 
+		if (is_localhost(argv[i+1], host_info)) {
+			hostnames[i] = (char *)malloc((strlen("localhost")+1)*
+						      sizeof(char));
+			strcpy(hostnames[i], "localhost"); 
+		} else {
+		/*
+		printf("%s is localhost :%d\n", argv[i+1],
+		is_localhost(argv[i+1], host_info)); */ 
+			hostnames[i] = (char *)
+				malloc((strlen(argv[i+1]) + 1) * sizeof(char));
+			strcpy(hostnames[i], argv[i+1]); 
+		}
 	}
 	return hostnames; 
 }
@@ -478,7 +541,7 @@ main( int argc, char* argv[] )
                 exit(2);
         }
         host = argv[1];
-        desktopprog_1(host, argc, argv);
+        desktopprog_1(host, num_hosts, hostnames);
 	destroy_hostname_list(num_hosts, hostnames); 
 
 	
