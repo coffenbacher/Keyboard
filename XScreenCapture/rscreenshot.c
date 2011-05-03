@@ -7,14 +7,9 @@
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 
-#define LOGFILENAME "/tmp/screenshot_log"
-#define LOG(msg, ...) fprintf(logfile, (msg), ##__VA_ARGS__)
-
-FILE *logfile;
 FILE *fp;
 static CLIENT *clnt;
-
-static GdkPixbuf * screenshot;
+static GdkPixbuf *screenshot;
 
 GdkPixbuf * get_screenshot(){
     GdkPixbuf *screenshot;
