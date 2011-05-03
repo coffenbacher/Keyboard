@@ -1,6 +1,3 @@
-/* Remote screenshot client code.
- * Taken from http://www.linuxjournal.com/articles/lj/0042/2204/2204l4.html
- */
 #include "screenshot.h"
 #include <stdio.h>
 #include <stdlib.h>
