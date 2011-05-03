@@ -7,12 +7,9 @@
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 
-FILE *fp;
 static CLIENT *clnt;
-static GdkPixbuf *screenshot;
 
-GdkPixbuf * get_screenshot(){
-    GdkPixbuf *screenshot;
+GdkPixbuf *get_screenshot(GdkPixbuf *screenshot){
     GdkWindow *root_window;
     gint x_orig, y_orig;
     gint width, height;
@@ -51,6 +48,7 @@ void screenshotprog_1( char* host, int argc, char *argv[])
         double  *result_1, *dp, f;
         char *endptr;
         int result, i;
+        GdkPixbuf *screenshot;
         input_data  screenshot_1_arg;
         CLIENT *clnt2, *clnt3, *clnt4;	
 
@@ -58,26 +56,14 @@ void screenshotprog_1( char* host, int argc, char *argv[])
 	gtk_init(NULL, NULL);
 
 	clnt = clnt_create(host, SCREENSHOTPROG, SCREENSHOTVERS, "udp");
-
-	if (clnt == NULL) {
-	        clnt_pcreateerror(host);
-	        exit(1);
-	}
-	
         clnt2 = clnt_create(host, DELETEIMAGEPROG, DELETEIMAGEVERS, "udp");
-
-	if (clnt2 == NULL) {
-	        clnt_pcreateerror(host);
-	        exit(1);
-	}
-
 	clnt3 = clnt_create(host, REFRESHDISPLAYPROG, REFRESHDISPLAYVERS, "udp");	
 	clnt4 = clnt_create(host, INITDISPLAYPROG, INITDISPLAYVERS, "udp");	
 	initdisplay_1(NULL, clnt4);
 
-	for (i=0; i<3000; i++){
+	while (1){
 	        result = deleteimage_1(NULL, clnt2);
-		screenshot = get_screenshot();
+		screenshot = get_screenshot(screenshot);
 	    	gdk_pixbuf_save_to_callback(screenshot, save_func, NULL, "jpeg", NULL, "quality", "20", NULL);
         	result = refreshdisplay_1(NULL, clnt3);
 		sleep(1.0);
