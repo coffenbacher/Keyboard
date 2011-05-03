@@ -42,6 +42,10 @@ TODO: destroy clients when quitting...
 #define REMOTEHOST 1
 #define MAXHOSTLENGTH 1024
 
+#define NEXT 1
+#define PREV -1
+#define LOCAL 0
+
 int hostType = NOHOST; 
 
 struct hosts_data_s{
@@ -52,6 +56,29 @@ struct hosts_data_s{
 };
 
 typedef struct hosts_data_s *hosts_data_t;
+
+
+void switch_hosts_new(int which_host, Display *dpy, hosts_data_t hosts_data) {
+	int next_host_index;
+	if (which_host == LOCAL) {
+		return; 
+	}
+
+	next_host_index = ((hosts_data->cur_host_index + which_host
+			     + hosts_data->num_hosts) %
+			   hosts_data->num_hosts);
+	
+	hosts_data->cur_host_index = next_host_index;
+
+	if (!strncmp(hosts_data->hostnames[next_host_index],
+		     "localhost", MAXHOSTLENGTH)) {
+		/* call localhostloop*/
+	} else {
+		/* call remotehostloop */
+	}
+	
+		
+}
 
 
 void switch_hosts(char *host, Display *dpy, /*CLIENT **clnt_keyboard,
@@ -75,7 +102,7 @@ int get_next_host_index(int cur_host_index, int num_hosts, int up)
 	if (up) {
 		next_host_index = (cur_host_index - 1 + num_hosts)%num_hosts; 
 	} else {
-		next_host_index = (cur_host_index + 1)%num_hosts;
+		next_host_index = (cur_host_index + 1 + num_hosts)%num_hosts;
 	}
 	printf("next host index: %d\n", next_host_index); 
 	return next_host_index;
@@ -197,7 +224,7 @@ void localhostLoop(Display *dpy, /*CLIENT **clnt_keyboard, CLIENT **clnt_mouse,*
 	char *s;
 	int switch_to_rem = 0;
 	int switch_to_loc = 0; 
-	
+	grab_keycombos(dpy); 
 	while(!quit) {
 		XNextEvent(dpy, &ev);
 		switch (ev.type) {
@@ -209,7 +236,7 @@ void localhostLoop(Display *dpy, /*CLIENT **clnt_keyboard, CLIENT **clnt_mouse,*
 			if(s) printf("KEY: %s\n", s);
 			/* TODO: make sure shouldn't be strncmp*/
 			if(!strcmp(s, "q")) {
-				ungrab_keycombos(dpy); 
+				
 				quit=1;
 			} else if(!strcmp(s, "Up")) {
 				host = get_next_host(cur_host_index, argc,
@@ -266,7 +293,7 @@ void remoteHostLoop(Display *dpy, /*CLIENT **clnt_keyboard, CLIENT **clnt_mouse,
 	CLIENT *clnt_mouse;
 	
 	create_clients(host, &clnt_keyboard, &clnt_mouse);*/
-
+	grab_hardware(dpy);
 	create_clients(host, &clnt_keyboard, &clnt_mouse); 
 	printf("created clients\n");	
 	/*TODO: change key_input and mouse_input to be * so more like what
@@ -377,7 +404,7 @@ void switch_hosts(char *host, Display *dpy, /*CLIENT **clnt_keyboard,  CLIENT **
 {
 
 	if (hostType == LOCALHOST) {
-		/*ungrab_keycombos(dpy);*
+		/*ungrab_keycombos(dpy);*/
 	} else if (hostType == REMOTEHOST) {
 		/*ungrab_hardware(dpy);*/
 		/*destroy_clients(*clnt_keyboard, *clnt_mouse); */
@@ -386,7 +413,7 @@ void switch_hosts(char *host, Display *dpy, /*CLIENT **clnt_keyboard,  CLIENT **
 	if (strncmp(host, "localhost", 10) == 0) {
 		printf("is localhost\n");
 		hostType = LOCALHOST; 
-		grab_keycombos(dpy);   /* TODO: put this line back in */
+		/*grab_keycombos(dpy);  */ /* TODO: put this line back in */
 		localhostLoop(dpy, /*clnt_keyboard, clnt_mouse,*/
 				     cur_host_index, argc, argv); 
 		/*create_clients(host, clnt_keyboard, clnt_mouse); */
@@ -397,7 +424,7 @@ void switch_hosts(char *host, Display *dpy, /*CLIENT **clnt_keyboard,  CLIENT **
 		printf("isn't localhost\n");
 		hostType = REMOTEHOST;
 		/*create_clients(host, clnt_keyboard, clnt_mouse); */
-		grab_hardware(dpy);
+		/*grab_hardware(dpy);*/
 		remoteHostLoop(dpy, /*clnt_keyboard, clnt_mouse,*/
 			       cur_host_index, argc, argv, host);
 	}
