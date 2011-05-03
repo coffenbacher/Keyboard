@@ -361,7 +361,7 @@ void switch_hosts(char *host, Display *dpy, CLIENT **clnt_keyboard,  CLIENT **cl
 		destroy_clients(*clnt_keyboard, *clnt_mouse); 
 	}
 
-	if (strncmp(host, "localhot", 10) == 0) {
+	if (strncmp(host, "localhost", 10) == 0) {
 		printf("is localhost\n");
 		hostType = LOCALHOST; 
 		grab_keycombos(dpy);   /* TODO: put this line back in */
