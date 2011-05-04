@@ -35,33 +35,35 @@ int *deleteimage_1_svc(void *tmp, struct svc_req *svc)
         return &result;
 }
 
+int exec_graphics()
+{
+	pid_t forkpid;
+	if ( (forkpid = fork()) < 0 )
+       	        fprintf(stderr, "Can't create fork.");
+        else if (forkpid == 0){
+               	execv("graphics", NULL);
+		exit(1);
+	}
+	else {
+		return forkpid;
+	}
+}
+
 int *refreshdisplay_1_svc(void *tmp, struct svc_req *svc)
 {
-/* UPDATE THIS SIGNAL TO USE A DYNAMIC NUMBER HERE */
         FILE *pid_grep;
         pid_t forkpid;
 	int pid;
 	pid_grep = popen("pidof graphics", "r");
 	if (fscanf(pid_grep, "%d", &pid) == -1) {
-		/* FORK TO CREATE GRAPHICS */
-	        if ( (forkpid = fork()) < 0 )
-        	        fprintf(stderr, "Can't create fork.");
-	        else if (forkpid == 0){
-                	execv("graphics", NULL);
-			_exit(0);
-		}
-		else {
-			pid = forkpid;
-		}
+	        pid = exec_graphics();
 		result = 0;
 		return &result;
 	}
-	else {
-		fprintf(stderr, "%d", pid);
-		kill(pid, SIGIO);
-		result = 1;
-		return &result;
-	}
+	kill(pid, SIGIO);
+	result = 1;
+	return &result;
+	
 }
 
 int *initdisplay_1_svc(void *tmp, struct svc_req *svc)

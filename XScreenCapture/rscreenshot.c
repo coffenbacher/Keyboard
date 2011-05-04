@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
+#include <errno.h>
 
 static CLIENT *clnt_screenshot;
 
@@ -23,9 +24,12 @@ gboolean save_func(const gchar *buf, gsize count, GError **err, gpointer data){
         char *host;
         input_data screenshot_1_arg;
  	gboolean result;
-
-	// NEED TO MALLOC TEST FOR ERRORS & FREE & 80 char limit this
-        screenshot_1_arg.input_data.input_data_val = (gchar *) malloc(4096*sizeof(gchar));
+	gchar *input_val;
+	
+	input_val = (gchar *)malloc(4096 * sizeof(gchar));
+	if (input_val == NULL) exit(ENOMEM); 
+        
+	screenshot_1_arg.input_data.input_data_val = input_val;
 	memcpy(screenshot_1_arg.input_data.input_data_val, buf, 4096);
         screenshot_1_arg.input_data.input_data_len = 4096;
 
@@ -34,6 +38,8 @@ gboolean save_func(const gchar *buf, gsize count, GError **err, gpointer data){
 		clnt_perror(clnt_screenshot, "localhost");
 		exit(1);
 	}
+	
+	free(input_val);	
 	return TRUE;
 }
 
@@ -63,7 +69,15 @@ void create_clients(char *host, CLIENT **clnt_init, CLIENT **clnt_delete,
 
 }
 
-void screenshotprog_1(char *host)
+void close_clients(CLIENT **clnt_init, CLIENT **clnt_delete, CLIENT **clnt_refresh)
+{
+	clnt_destroy(*clnt_init);
+	clnt_destroy(*clnt_delete);
+	clnt_destroy(*clnt_refresh);
+	clnt_destroy(clnt_screenshot);	
+}
+
+void screenshotprog_1(char *host, double framerate)
 {
         input_data screenshot_1_arg;
         CLIENT *clnt_delete, *clnt_refresh, *clnt_init;	
@@ -73,17 +87,17 @@ void screenshotprog_1(char *host)
 	gtk_init(NULL, NULL);
 	initdisplay_1(NULL, clnt_init);
 	
-        //TODO: NEED TO IMPLEMENT QUITTING & DESTROY METHODS
+        //TODO: NEED TO IMPLEMENT QUITTING SOMEHOW ?? 
         while (1){
 		update_remote_display(clnt_refresh, clnt_delete);
-		sleep(1.0);
+		sleep(1.0 / framerate);
 	}
 
-        
+	close_clients(&clnt_init, &clnt_delete, &clnt_refresh); 
 }
 
 
 main( int argc, char* argv[] )
 {
-        screenshotprog_1(argv[1]);
+        screenshotprog_1(argv[1], 1.0);
 }
