@@ -36,40 +36,6 @@
 #define MAXAVGSIZE 1024
 pa_simple *s_read = NULL;
 
-void
-serverprog_2( char* host, int argc, char *argv[])
-{
-        CLIENT *clnt;
-        int  *result_1;
-	double f;
-	char *dp;
-        char *endptr;
-        int i;
-        input_data  average_1_arg;
-     
-        average_1_arg.input_data.input_data_val =
-                (char*) malloc(MAXAVGSIZE*sizeof(char));
-        dp = average_1_arg.input_data.input_data_val;
-        average_1_arg.input_data.input_data_len = MAXAVGSIZE;
-        for ( i = 1; i <= (argc - 2); i++) {
-                f = strtod(argv[i + 1], &endptr);
-                *dp = (char)i;
-                printf("value   = %c\n", *dp);
-                dp++;
-        }
-        clnt = clnt_create(host, SERVERPROG, SERVERVERS, "udp");
-        if (clnt == NULL) {
-                clnt_pcreateerror(host);
-                exit(1);
-        }
-        result_1 = server_1(&average_1_arg, clnt);
-        if (result_1 == NULL) {
-                clnt_perror(clnt, "call failed:");
-        }
-        clnt_destroy( clnt );
-        printf("average = %e\n", *result_1);
-}
-
 
 void
 serverprog_1( char* host, int argc, char *argv[])
@@ -82,7 +48,7 @@ serverprog_1( char* host, int argc, char *argv[])
 	char buffer[1024];
 	char *dp, f;
         char *endptr;
-	int i;
+	int i,j;
 	uint8_t buf[BUFSIZE];
 	int error;
 
@@ -98,9 +64,9 @@ serverprog_1( char* host, int argc, char *argv[])
 	if (result_1 == NULL) {
                 clnt_perror(clnt_control, "control call failed:");
         } else {
-	        printf("starting result_1 = %i\n", *result_1);
+	        /*printf("starting result_1 = %i\n", *result_1);*/
 	}
-
+	
 	startReadServer();
 	clnt_server = clnt_create(host, SERVERPROG, SERVERVERS, "udp");
 	if (clnt_server == NULL) {
@@ -111,15 +77,16 @@ serverprog_1( char* host, int argc, char *argv[])
         server_1_arg.input_data.input_data_val = (char*) malloc(MAXAVGSIZE*sizeof(char));
         server_1_arg.input_data.input_data_len = MAXAVGSIZE;
 
-	for (i = 0; i < 1000; i++) {
-        	printf("i=%i\n", i);
+	for (i = 0; i < 10000; i++) {
+        	/*printf("i=%i\n", i);*/
 
 		if (pa_simple_read(s_read, buf, sizeof(buf), &error) < 0) {
 			printf("pa_simple_read() failed: %s\n", pa_strerror(error));
 		}
+
 		dp = server_1_arg.input_data.input_data_val;
-		for ( i = 0; i < 1024; i++) {
-			*dp = (char)buf[i];
+		for ( j = 0; j < 1024; j++) {
+			*dp = (char)buf[j];
 			dp++;
 		}
 		result_2 = server_1(&server_1_arg, clnt_server);
@@ -127,7 +94,7 @@ serverprog_1( char* host, int argc, char *argv[])
 			printf("result2  error");
 			clnt_perror(clnt_server, "server call failed:");
 		}				
-		printf("result_2 = %i\n", *result_2);
+		/*printf("result_2 = %i\n", *result_2);*/
 	}
 	
 	control_1_arg.flag = 3;
@@ -135,7 +102,7 @@ serverprog_1( char* host, int argc, char *argv[])
 	if (result_1 == NULL) {
                 clnt_perror(clnt_control, "control call failed:");
         }
-        printf("killing result_1 = %i\n", *result_1);
+        /*printf("killing result_1 = %i\n", *result_1);*/
 
         clnt_destroy( clnt_server );
         clnt_destroy( clnt_control );

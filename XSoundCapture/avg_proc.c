@@ -74,17 +74,17 @@ int *server_1(input_data *input, CLIENT *client)
         ssize_t r;
 	char *dp = input->input_data.input_data_val;
  
-
+	/*
 	printf("server: buffer=");
         for (i = 0; i < BUFSIZE; i++) {
 		printf("%c ", *dp);
                 dp++;
         }
-	printf("\n");
+	printf("\n");*/
 	
 	dp = input->input_data.input_data_val;
 
-	printf("writing\n");
+	/*printf("writing\n");*/
         if (pa_simple_write(s_write, dp, (size_t) BUFSIZE, &error) < 0) {
             printf(": pa_simple_write() failed: %s\n", pa_strerror(error));
         }
