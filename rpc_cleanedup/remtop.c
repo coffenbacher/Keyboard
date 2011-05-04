@@ -34,14 +34,15 @@ typedef struct hosts_data_s *hosts_data_t;
 void switch_hosts(int which_host, Display *dpy, hosts_data_t hosts_data); 
 
 /* Destroys the given keyboard and mouse clients */
-void destroy_clients(CLIENT *clnt_keyboard, CLIENT *clnt_mouse) 
+void destroy_clients(CLIENT *clnt_keyboard, CLIENT *clnt_mouse, CLIENT *clnt_image) 
 {
         clnt_destroy( clnt_keyboard );
-	clnt_destroy( clnt_mouse ); 
+	clnt_destroy( clnt_mouse );
+	clnt_destroy( clnt_image ); 
 } /* end destroy_clients */
 
 /* Creates the keyboard and mouse clients based on given host name. */
-void create_clients(char *host, CLIENT **clnt_keyboard, CLIENT **clnt_mouse)
+void create_clients(char *host, CLIENT **clnt_keyboard, CLIENT **clnt_mouse, CLIENT **clnt_image)
 {
         *clnt_keyboard = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "tcp");
 	if (*clnt_keyboard == NULL) {
@@ -52,7 +53,12 @@ void create_clients(char *host, CLIENT **clnt_keyboard, CLIENT **clnt_mouse)
         if (*clnt_mouse == NULL) {
                 clnt_pcreateerror(host);
                 exit(1);
-	} 
+	}
+	*clnt_image = clnt_create(host, IMAGEPROG, IMAGEVERS, "tcp");
+        if (*clnt_image == NULL) {
+                clnt_pcreateerror(host);
+                exit(1);
+	}
 } /* end create_clients */
 
 /* grab single keycombo with given modifiers and keycode */
@@ -267,9 +273,11 @@ void remoteHostLoop(Display *dpy, hosts_data_t hosts_data)
 	int quit_loop = 0; 
 	key_input keyboard_1_arg; 
 	mouse_input mouse_1_arg;
+	image_input image_1_arg; 
 	XEvent ev;
 	CLIENT *clnt_keyboard;
 	CLIENT *clnt_mouse;
+	CLIENT *clnt_image; 
 	int button;
 	int x, y, kc;
 	char *s; 
@@ -278,8 +286,9 @@ void remoteHostLoop(Display *dpy, hosts_data_t hosts_data)
 	char *host = hosts_data->hostnames[hosts_data->cur_host_index]; 
 
 	grab_hardware(dpy);
-	create_clients(host, &clnt_keyboard, &clnt_mouse); 
-	printf("created clients\n");	
+	create_clients(host, &clnt_keyboard, &clnt_mouse, &clnt_image);
+	image_1_arg.init = 1; 
+	image_1(&image_1_arg, clnt_image); 	
 
 	while(!quit_loop) { 
 		XNextEvent(dpy, &ev); 
@@ -308,7 +317,9 @@ void remoteHostLoop(Display *dpy, hosts_data_t hosts_data)
 		
 	}/*end while */
 	ungrab_hardware(dpy);
-	destroy_clients(clnt_keyboard, clnt_mouse);
+	destroy_clients(clnt_keyboard, clnt_mouse, clnt_image);
+	image_1_arg.init = 0; 
+	image_1(&image_1_arg, clnt_image); 	
 
 	if (!quit_program) {
 		switch_hosts(which_host, dpy, hosts_data); 
