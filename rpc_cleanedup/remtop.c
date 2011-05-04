@@ -376,29 +376,36 @@ int is_localhost(char *host, struct hostent *host_info)
 	return 0;
 }
 
+char *copy_string(char *to_copy)
+{
+	int str_len = strlen(to_copy) + 1;
+	char *copied_str; 
+	if ((copied_str = (char *)malloc(str_len * sizeof(char))) == NULL) {
+		perror("copy_string");
+		exit(errno);
+	}
+	strncpy(copied_str, to_copy, str_len);
+	copied_str[str_len - 1] = '\0';
+	return copied_str; 
+}
+
 char **create_hostname_list(int argc, char *argv[])
 {
 	char **hostnames;
-	int i = 0;
-	int len;
+	int len, i = 0;
 	char hostname[MAXHOSTLENGTH];
 	struct hostent *host_info;
-
-	/* TODO: Check for errors */
 	gethostname(hostname, MAXHOSTLENGTH);
-	printf("%s\n", hostname);
 	host_info = gethostbyname(hostname);
-	hostnames = (char **) malloc((argc-1) * sizeof(char *));
-
+	if ((hostnames = (char **) malloc((argc-1) * sizeof(char *))) == NULL) {
+		perror("create_hostname_list");
+		exit(1);
+	}
 	for (i = 0; i < argc-1; i++) {
 		if (is_localhost(argv[i+1], host_info)) {
-			hostnames[i] = (char *)malloc((strlen("localhost")+1)*
-						      sizeof(char));
-			strcpy(hostnames[i], "localhost"); 
+			hostnames[i] = copy_string("localhost"); 
 		} else {
-			hostnames[i] = (char *)
-				malloc((strlen(argv[i+1]) + 1) * sizeof(char));
-			strcpy(hostnames[i], argv[i+1]); 
+			hostnames[i] = copy_string(argv[i+1]); 
 		}
 	}
 	return hostnames; 
