@@ -204,11 +204,11 @@ void remoteHost_KeyPress(Display *dpy, XEvent *ev, CLIENT *clnt_keyboard,
 	if (!strncmp(s, "Alt", 3)) *alt_down = 1;
 	if (!strncmp(s, "Control", 7)) *ctrl_down = 1;
 	if (!strncmp(s, "Shift", 5)) *shift_down = 1;
-	
+	/*
 	if(!strncmp(s, "q", 1) && *ctrl_down && *alt_down) {
 		*quit_loop = 1;
 		*quit_program = 1;
-	} else if(!strcmp(s, "Up") && ctrl_down && shift_down) {
+	} else if(!strcmp(s, "Up") && *ctrl_down && *shift_down) {
 		*which_host = NEXT;
 		*quit_loop = 1;
 	} else if (!strcmp(s, "Down") && *ctrl_down
@@ -220,13 +220,14 @@ void remoteHost_KeyPress(Display *dpy, XEvent *ev, CLIENT *clnt_keyboard,
 		*which_host = LOCAL; 
 		*quit_loop = 1;
 	}
-
+	*/
 }
 
 /* Perform necessary actions for when a key is released when running on
  remote server */
 void remoteHost_KeyRelease(Display *dpy, XEvent *ev, CLIENT *clnt_keyboard,
-			 int *alt_down, int *ctrl_down, int *shift_down)
+			   int *alt_down, int *ctrl_down, int *shift_down,
+			   int *quit_loop, int *quit_program, int *which_host)
 {
 	key_input keyboard_1_arg; 
 	int kc = ((XKeyReleasedEvent*)ev)->keycode;
@@ -235,7 +236,22 @@ void remoteHost_KeyRelease(Display *dpy, XEvent *ev, CLIENT *clnt_keyboard,
 	keyboard_1_arg.keycode = kc;
 	keyboard_1(&keyboard_1_arg, clnt_keyboard); 
 	
-	s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
+	s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0));
+
+	if(!strncmp(s, "q", 1) && *ctrl_down && *alt_down) {
+		*quit_loop = 1;
+		*quit_program = 1;
+	} else if(!strcmp(s, "Up") && *ctrl_down && *shift_down) {
+		*which_host = NEXT;
+		*quit_loop = 1;
+	} else if (!strcmp(s, "Down") && *ctrl_down && *shift_down) {
+		*which_host = PREV;
+		*quit_loop = 1;
+	} else if (!strcmp(s, "l") && *ctrl_down && *shift_down) {
+		*which_host = LOCAL; 
+		*quit_loop = 1;
+	}
+	
 	if (!strncmp(s, "Alt", 3)) *alt_down = 0;
 	if (!strncmp(s, "Control", 7)) *ctrl_down = 0;
 	if (!strncmp(s, "Shift", 5)) *shift_down = 0;
@@ -292,7 +308,8 @@ void remoteHostLoop(Display *dpy, hosts_data_t hosts_data)
 
 	create_clients(host, &clnt_keyboard, &clnt_mouse, &clnt_image);
 	image_1_arg.init = 1;
-	strcpy(image_1_arg.host, "psingal-Latitude-D630"); 
+	gethostname(image_1_arg.host, MAXHOSTLENGTH); 
+	/*strcpy(image_1_arg.host, "psingal-Latitude-D630"); */
 	image_1(&image_1_arg, clnt_image);
 	grab_hardware(dpy);
 
@@ -317,7 +334,8 @@ void remoteHostLoop(Display *dpy, hosts_data_t hosts_data)
 		case KeyRelease:
 			remoteHost_KeyRelease(dpy, &ev, clnt_keyboard,
 					      &alt_down, &ctrl_down,
-					      &shift_down); 
+					      &shift_down, &quit_loop,
+					      &quit_program, &which_host); 
 			break;
 		} 
 		
@@ -472,6 +490,9 @@ int main( int argc, char* argv[] )
 {
         char *host;
 	hosts_data_t hosts_data;
+	
+	
+	
 
         if (argc < 2) {
                 printf("usage: %s server_host value \n",
