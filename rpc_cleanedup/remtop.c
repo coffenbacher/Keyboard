@@ -2,32 +2,6 @@
  * Taken from http://www.linuxjournal.com/articles/lj/0042/2204/2204l4.html
  */
 
-/*
-  CURRENTLY WORKING ON:
-  TODO: Just create/destroy the two clients in remoteLoop ... only place you
-  need them!
- */
-
-/*
-TODO: strcmp vs. strncmp
- */
-
-/*
-TODO: struct for clients
- */
-
-/*
- TODO: Struct for host_data
- */
-
-/*
- TODO: split switch_host to switch_to_prev_host, next_host, and localhost
- */
-
-/*
-TODO: destroy clients when quitting...
- */
-
 #include "remtop.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -240,6 +214,8 @@ void remoteHost_KeyPress(Display *dpy, XEvent *ev, CLIENT *clnt_keyboard,
 
 }
 
+/* Perform necessary actions for when a key is released when running on
+ remote server */
 void remoteHost_KeyRelease(Display *dpy, XEvent *ev, CLIENT *clnt_keyboard,
 			 int *alt_down, int *ctrl_down, int *shift_down)
 {
@@ -254,6 +230,34 @@ void remoteHost_KeyRelease(Display *dpy, XEvent *ev, CLIENT *clnt_keyboard,
 	if (!strncmp(s, "Alt", 3)) *alt_down = 0;
 	if (!strncmp(s, "Control", 7)) *ctrl_down = 0;
 	if (!strncmp(s, "Shift", 5)) *shift_down = 0;
+}
+
+/* Perform necessary actions for when button is pressed or released  when
+   running on remote server */
+void remoteHost_Button(Display *dpy, XEvent *ev, CLIENT *clnt_mouse,
+			 int on_press)
+{
+	mouse_input mouse_1_arg;
+	/* XButtonPressedEvent and XButtonReleasedEvent have same structure */
+	int button = ((XButtonPressedEvent*)ev)->button;
+	mouse_1_arg.button_event = 1;
+	mouse_1_arg.on_press = on_press;
+	mouse_1_arg.button = button; 
+	mouse_1(&mouse_1_arg, clnt_mouse);
+}
+
+/* Perform necessary actions for when mouse is moved  when
+   running on remote server */
+void remoteHost_MotionNotify(Display *dpy, XEvent *ev, CLIENT *clnt_mouse)
+{
+	int x, y;
+	mouse_input mouse_1_arg;
+	x = ((XPointerMovedEvent*)ev)->x;
+	y = ((XPointerMovedEvent*)ev)->y;
+	mouse_1_arg.x = x;
+	mouse_1_arg.y = y;
+	mouse_1_arg.button_event = 0; 
+	mouse_1(&mouse_1_arg, clnt_mouse);
 }
 
 /* TODO: get proper inputs in here (change argv and argc)*/
@@ -278,75 +282,27 @@ void remoteHostLoop(Display *dpy, hosts_data_t hosts_data)
 	printf("created clients\n");	
 
 	while(!quit_loop) { 
-
 		XNextEvent(dpy, &ev); 
-
 		switch (ev.type) {
 		case ButtonPress:
-			button = ((XButtonPressedEvent*)&ev)->button;
-			mouse_1_arg.button_event = 1;
-			mouse_1_arg.on_press = 1;
-			mouse_1_arg.button = button; 
-			mouse_1(&mouse_1_arg, clnt_mouse);
+			remoteHost_Button(dpy, &ev, clnt_mouse, 1); 
 			break; 
 		case ButtonRelease:
-			mouse_1_arg.button_event = 1;
-			mouse_1_arg.on_press = 0;
-			mouse_1_arg.button = 
-				((XButtonPressedEvent*)&ev)->button;
-			mouse_1(&mouse_1_arg, clnt_mouse);
+			remoteHost_Button(dpy, &ev, clnt_mouse, 0); 
 			break; 
 		case MotionNotify:
-			x = ((XPointerMovedEvent*)&ev)->x;
-			y = ((XPointerMovedEvent*)&ev)->y;
-		        mouse_1_arg.x = x;
-			mouse_1_arg.y = y;
-			mouse_1_arg.button_event = 0; 
-			mouse_1(&mouse_1_arg, clnt_mouse);
+			remoteHost_MotionNotify(dpy, &ev, clnt_mouse);
 			break;
 		case KeyPress:
 			remoteHost_KeyPress(dpy, &ev, clnt_keyboard, &alt_down,
 					    &ctrl_down, &shift_down, &quit_loop,
 					    &quit_program, &which_host); 
-/*			kc = ((XKeyPressedEvent*)&ev)->keycode;
-			keyboard_1_arg.on_press = 1;
-			keyboard_1_arg.keycode = kc;
-			keyboard_1(&keyboard_1_arg, clnt_keyboard);
-			s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0));
-			if (!strncmp(s, "Alt", 3)) alt_down = 1;
-			if (!strncmp(s, "Control", 7)) ctrl_down = 1;
-			if (!strncmp(s, "Shift", 5)) shift_down = 1;
-
-			if(!strncmp(s, "q", 1) && ctrl_down && alt_down) {
-				quit_loop = 1;
-				quit_program = 1;
-			} else if(!strcmp(s, "Up") && ctrl_down && shift_down) {
-				which_host = NEXT;
-				quit_loop = 1;
-			} else if (!strcmp(s, "Down") && ctrl_down
-				   && shift_down) {
-				which_host = PREV;
-				quit_loop = 1;
-			} else if (!strcmp(s, "l") && ctrl_down
-				   && shift_down) {
-				which_host = LOCAL; 
-				quit_loop = 1;
-				}*/
 			break;
 			
 		case KeyRelease:
 			remoteHost_KeyRelease(dpy, &ev, clnt_keyboard,
 					      &alt_down, &ctrl_down,
 					      &shift_down); 
-/*			kc = ((XKeyReleasedEvent*)&ev)->keycode;
-			keyboard_1_arg.on_press = 0;
-			keyboard_1_arg.keycode = kc;
-			keyboard_1(&keyboard_1_arg, clnt_keyboard); 
-			
-			s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
-			if (!strncmp(s, "Alt", 3)) alt_down = 0;
-			if (!strncmp(s, "Control", 7)) ctrl_down = 0;
-			if (!strncmp(s, "Shift", 5)) shift_down = 0; */
 			break;
 		} 
 		
@@ -357,8 +313,6 @@ void remoteHostLoop(Display *dpy, hosts_data_t hosts_data)
 	if (!quit_program) {
 		switch_hosts(which_host, dpy, hosts_data); 
 	}
-	
-
 }
 
 /* Open display and switch to first host */
