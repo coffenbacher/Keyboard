@@ -1,5 +1,4 @@
-/* Taken from http://www.linuxjournal.com/articles/lj/0042/2204/2204l1.html
- */
+/* Taken from http://www.linuxjournal.com/articles/lj/0042/2204/2204l1.html */
 
 struct input_data {
         opaque input_data<>;
