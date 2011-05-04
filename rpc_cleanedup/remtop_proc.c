@@ -21,7 +21,6 @@ FILE *logfile;
 
 static int ret_val = 0;
 
-/*double *average_1(input_data *input, CLIENT *client) */
 int *keyboard_1(key_input *input, CLIENT *client)
 {
 
@@ -32,7 +31,7 @@ int *keyboard_1(key_input *input, CLIENT *client)
 
 	on_press = input->on_press;
 	keycode = input->keycode;
-	s = XKeysymToString(XKeycodeToKeysym(dpy, keycode, 0));
+/*	s = XKeysymToString(XKeycodeToKeysym(dpy, keycode, 0)); */
 /*	printf("key pressed: %d %s\n", on_press, s);*/
 
 	XTestFakeKeyEvent(dpy, keycode, on_press, CurrentTime);
@@ -45,9 +44,6 @@ int *keyboard_1(key_input *input, CLIENT *client)
 
 int *mouse_1(mouse_input *input, CLIENT *client)
 {
-        /*double *dp = input->input_data.input_data_val; */
-/*        u_int i;
-	  int val; */
 	Display *dpy = XOpenDisplay(NULL);
 
 	int on_press; 
@@ -58,27 +54,28 @@ int *mouse_1(mouse_input *input, CLIENT *client)
 	if (input->button_event == 0) {
 		x = input->x;
 		y = input->y;
+		
+		/* Use the following for debugging mode */
 		/*printf("x: %d, y: %d\n", x, y); */
-		
-		
+
+		/* Comment out following for debug mode */
 		XTestFakeMotionEvent(dpy, 0, x, y, CurrentTime);
 		 
 	} else {
 		button = input->button;
 		on_press = input->on_press;
-		/* printf("button: %d, pressed? %d\n", input->button, on_press);   */
 
+		/* Use the following for debugging mode */
+		/* printf("button: %d, pressed? %d\n",
+		   input->button, on_press);   */
+
+		/* Comment out following for debug mode */
  		XTestFakeButtonEvent(dpy, button, on_press, CurrentTime);  
 		
 	}
-
-
 	
 	XCloseDisplay(dpy);
 	return &ret_val; 
-
-	/*return 0; */
-
 }
 
 
@@ -91,7 +88,8 @@ int *image_1(image_input *input, CLIENT *client)
 		if ( (forkpid = fork()) < 0)
 			fprintf(stderr, "Can't create fork.");
 		else if  (forkpid == 0){
-			execl("./rscreenshot", "rscreenshot", input->host, NULL);
+			execl("./rscreenshot", "rscreenshot",
+			      input->host, NULL);
 			exit(1);
 		}
 		else {
@@ -102,9 +100,6 @@ int *image_1(image_input *input, CLIENT *client)
 	}
 	return &ret_val;
 }
-
-
-/*double *average_1_svc(input_data *input, struct svc_req *svc) */
 
 
 int *keyboard_1_svc(key_input *input, struct svc_req *svc)
