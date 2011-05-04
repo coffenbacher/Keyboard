@@ -1,10 +1,14 @@
 /* Software Systems Final Project
-   Remtop.c
+   remtop_proc.c
    Remtop Server code
    
    Authors: Charles Offenbacher, Poorva Singal, and Jon Reed
    Last updated: 5/4/2011
 
+   This is the server side code for remtop.  It fakes key and mouse events
+   on the remote computer running the service as well as capture screenshots
+   on the remote computer to be sent to the local computer.  
+   
    Notes:
    Poorva worked on the keyboard/mouse interactions and thus the one primarily
    responsible for the contents of this file.  Charlie and Poorva pair

@@ -1,9 +1,14 @@
 /* Software Systems Final Project
-   Remtop.c
+   remtop.c
    Remtop Client Code
    
    Authors: Charles Offenbacher, Poorva Singal, and Jon Reed
    Last updated: 5/4/2011
+
+   This is the client side code for remtop.  It connects to the apprporiate
+   host and grabs the keyboard and mouse of the local computer if the host
+   is running on a remote server.  If connected to a remote host, it also
+   starts the service that allows for screenshots to be received.  
 
    Notes:
    Poorva worked on the keyboard/mouse interactions and thus the one primarily
@@ -501,9 +506,6 @@ int main( int argc, char* argv[] )
 {
         char *host;
 	hosts_data_t hosts_data;
-	
-	
-	
 
         if (argc < 2) {
                 printf("usage: %s server_host value \n",
