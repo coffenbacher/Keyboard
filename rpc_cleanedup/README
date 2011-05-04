@@ -10,6 +10,9 @@ between multiple remote computers and the local computer itself.  In addition,
 whenever connected to a remote computer, you will also receive screenshots of
 the other computer.   
 
+Version control is available at:
+https://github.com/coffenbacher/Keyboard
+
 ***********************************************
 ****STARTING THE SERVICE ON THE REMOTE SIDE****
 ***********************************************
