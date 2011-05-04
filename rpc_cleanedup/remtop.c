@@ -49,7 +49,6 @@ TODO: destroy clients when quitting...
 int hostType = NOHOST; 
 
 struct hosts_data_s{
-	int cur_host_type;
 	int num_hosts;
 	char **hostnames;	
 	int cur_host_index; 
@@ -168,46 +167,31 @@ void ungrab_hardware(Display *dpy)
 	XUngrabKeyboard(dpy, CurrentTime); 
 }
 
-
+/* Run loop for when on localhost.  Check for key combinations being
+   pressed and give client full control of their own computer */
 void localhostLoop(Display *dpy, hosts_data_t hosts_data)
 {
-	int quit_loop = 0, quit_program = 0; 
+	int quit_loop = 0, quit_program = 0, which_host = 0; 
 	int kc;
 	XEvent ev;
 	char *s;
-	int which_host = 0;
-	
 	grab_keycombos(dpy); 
 	while(!quit_loop) {
 		XNextEvent(dpy, &ev);
 		switch (ev.type) {
 		case KeyPress:
 			kc = ((XKeyPressedEvent*)&ev)->keycode; 
-			printf("\n%x\n", kc);
 			s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
-			
-			if(s) printf("KEY: %s\n", s);
-			/* TODO: make sure shouldn't be strncmp*/
-			if(!strcmp(s, "q")) {
-				
+			if(!strncmp(s, "q", 2)) {
 				quit_loop = 1;
 				quit_program = 1; 
-			} else if(!strcmp(s, "Up")) {
-				/*host = get_next_host(cur_host_index, argc,
-				  argv, 1);*/
+			} else if(!strncmp(s, "Up", 3)) {
 				which_host = NEXT; 
-				
 				quit_loop = 1;
-			} else if (!strcmp(s, "Down")) {
-				/*host = get_next_host(cur_host_index, argc,
-						     argv, 0);
-						     switch_to_rem = 1; 	*/
-
+			} else if (!strncmp(s, "Down", 5)) {
 				which_host = PREV; 
 				quit_loop = 1;
-			} else if (!strcmp(s, "l")) {
-				/*switch_to_loc = 1;*/
-				
+			} else if (!strncmp(s, "l", 2)) {
 				which_host = LOCAL; 
 				quit_loop = 1; 
 			}
@@ -215,12 +199,62 @@ void localhostLoop(Display *dpy, hosts_data_t hosts_data)
 		}
 	}
 	ungrab_keycombos(dpy);
-	
 	if (!quit_program) {
 		switch_hosts(which_host, dpy, hosts_data);   
 	}
 }
 
+/* Perform necessary actions for when a key is pressed when running on
+ remote server */
+void remoteHost_KeyPress(Display *dpy, XEvent *ev, CLIENT *clnt_keyboard,
+			 int *alt_down, int *ctrl_down, int *shift_down,
+			 int *quit_loop, int *quit_program, int *which_host)
+{
+	key_input keyboard_1_arg; 
+	int kc  = ((XKeyPressedEvent*)ev)->keycode;
+	char *s;
+	
+	keyboard_1_arg.on_press = 1;
+	keyboard_1_arg.keycode = kc;
+	keyboard_1(&keyboard_1_arg, clnt_keyboard);
+	s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0));
+	if (!strncmp(s, "Alt", 3)) *alt_down = 1;
+	if (!strncmp(s, "Control", 7)) *ctrl_down = 1;
+	if (!strncmp(s, "Shift", 5)) *shift_down = 1;
+	
+	if(!strncmp(s, "q", 1) && *ctrl_down && *alt_down) {
+		*quit_loop = 1;
+		*quit_program = 1;
+	} else if(!strcmp(s, "Up") && ctrl_down && shift_down) {
+		*which_host = NEXT;
+		*quit_loop = 1;
+	} else if (!strcmp(s, "Down") && *ctrl_down
+		   && *shift_down) {
+		*which_host = PREV;
+		*quit_loop = 1;
+	} else if (!strcmp(s, "l") && *ctrl_down
+		   && *shift_down) {
+		*which_host = LOCAL; 
+		*quit_loop = 1;
+	}
+
+}
+
+void remoteHost_KeyRelease(Display *dpy, XEvent *ev, CLIENT *clnt_keyboard,
+			 int *alt_down, int *ctrl_down, int *shift_down)
+{
+	key_input keyboard_1_arg; 
+	int kc = ((XKeyReleasedEvent*)ev)->keycode;
+	char *s; 
+	keyboard_1_arg.on_press = 0;
+	keyboard_1_arg.keycode = kc;
+	keyboard_1(&keyboard_1_arg, clnt_keyboard); 
+	
+	s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
+	if (!strncmp(s, "Alt", 3)) *alt_down = 0;
+	if (!strncmp(s, "Control", 7)) *ctrl_down = 0;
+	if (!strncmp(s, "Shift", 5)) *shift_down = 0;
+}
 
 /* TODO: get proper inputs in here (change argv and argc)*/
 void remoteHostLoop(Display *dpy, hosts_data_t hosts_data) 
@@ -270,10 +304,11 @@ void remoteHostLoop(Display *dpy, hosts_data_t hosts_data)
 			mouse_1_arg.button_event = 0; 
 			mouse_1(&mouse_1_arg, clnt_mouse);
 			break;
-
-		case KeyPress: 
-			
-			kc = ((XKeyPressedEvent*)&ev)->keycode;
+		case KeyPress:
+			remoteHost_KeyPress(dpy, &ev, clnt_keyboard, &alt_down,
+					    &ctrl_down, &shift_down, &quit_loop,
+					    &quit_program, &which_host); 
+/*			kc = ((XKeyPressedEvent*)&ev)->keycode;
 			keyboard_1_arg.on_press = 1;
 			keyboard_1_arg.keycode = kc;
 			keyboard_1(&keyboard_1_arg, clnt_keyboard);
@@ -296,11 +331,14 @@ void remoteHostLoop(Display *dpy, hosts_data_t hosts_data)
 				   && shift_down) {
 				which_host = LOCAL; 
 				quit_loop = 1;
-			}
+				}*/
 			break;
 			
-		case KeyRelease: 
-			kc = ((XKeyReleasedEvent*)&ev)->keycode;
+		case KeyRelease:
+			remoteHost_KeyRelease(dpy, &ev, clnt_keyboard,
+					      &alt_down, &ctrl_down,
+					      &shift_down); 
+/*			kc = ((XKeyReleasedEvent*)&ev)->keycode;
 			keyboard_1_arg.on_press = 0;
 			keyboard_1_arg.keycode = kc;
 			keyboard_1(&keyboard_1_arg, clnt_keyboard); 
@@ -308,7 +346,7 @@ void remoteHostLoop(Display *dpy, hosts_data_t hosts_data)
 			s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
 			if (!strncmp(s, "Alt", 3)) alt_down = 0;
 			if (!strncmp(s, "Control", 7)) ctrl_down = 0;
-			if (!strncmp(s, "Shift", 5)) shift_down = 0;
+			if (!strncmp(s, "Shift", 5)) shift_down = 0; */
 			break;
 		} 
 		
@@ -323,6 +361,7 @@ void remoteHostLoop(Display *dpy, hosts_data_t hosts_data)
 
 }
 
+/* Open display and switch to first host */
 void desktopprog_1(hosts_data_t hosts_data)
 {
 	Display *dpy;
@@ -376,6 +415,8 @@ int is_localhost(char *host, struct hostent *host_info)
 	return 0;
 }
 
+/* Return malloced copy of given string
+ */
 char *copy_string(char *to_copy)
 {
 	int str_len = strlen(to_copy) + 1;
@@ -389,6 +430,8 @@ char *copy_string(char *to_copy)
 	return copied_str; 
 }
 
+/* Create list of hostnames from main method arguments
+ */
 char **create_hostname_list(int argc, char *argv[])
 {
 	char **hostnames;
@@ -399,7 +442,7 @@ char **create_hostname_list(int argc, char *argv[])
 	host_info = gethostbyname(hostname);
 	if ((hostnames = (char **) malloc((argc-1) * sizeof(char *))) == NULL) {
 		perror("create_hostname_list");
-		exit(1);
+		exit(errno);
 	}
 	for (i = 0; i < argc-1; i++) {
 		if (is_localhost(argv[i+1], host_info)) {
@@ -411,7 +454,7 @@ char **create_hostname_list(int argc, char *argv[])
 	return hostnames; 
 }
 
-
+/* Free hostnames list */
 void destroy_hostname_list(int num_hosts, char **hostnames)
 {
 	int i = 0;
@@ -421,6 +464,7 @@ void destroy_hostname_list(int num_hosts, char **hostnames)
 	free(hostnames);
 }
 
+/* return host_data struct based on main method arguments  */
 hosts_data_t create_hosts_data(int argc, char* argv[])
 {
 	hosts_data_t hosts_data;
@@ -430,7 +474,6 @@ hosts_data_t create_hosts_data(int argc, char* argv[])
 		perror("main"); 
 		exit(errno); 
 	}
-	hosts_data->cur_host_type = NOHOST;
 	hosts_data->num_hosts = argc-1;
 	hosts_data->cur_host_index = -1;
 	hosts_data->hostnames = create_hostname_list(argc, argv);
@@ -438,13 +481,17 @@ hosts_data_t create_hosts_data(int argc, char* argv[])
 	return hosts_data; 
 }
 
+/* Free space from host_data struct
+ */
 void destroy_hosts_data(hosts_data_t hosts_data)
 {
 	destroy_hostname_list(hosts_data->num_hosts, hosts_data->hostnames);
 	free(hosts_data); 
 }
 
-main( int argc, char* argv[] )
+/* Check for proper command line arguments and start program
+ */
+int main( int argc, char* argv[] )
 {
         char *host;
 	hosts_data_t hosts_data;
@@ -458,15 +505,15 @@ main( int argc, char* argv[] )
                 printf("Too many input values\n");
                 exit(EINVAL);
         }
-
 	hosts_data = create_hosts_data(argc, argv); 
         desktopprog_1(hosts_data);
-
 	destroy_hosts_data(hosts_data);
-	
+	return 0; 
 }
 
-
+/* Switch to host indicated (NEXT, PREV, or LOCAL) and run appropriate
+   loop.
+ */
 void switch_hosts(int which_host, Display *dpy, hosts_data_t hosts_data) {
 	int next_host_index;
 	if (which_host == LOCAL) {
@@ -481,7 +528,7 @@ void switch_hosts(int which_host, Display *dpy, hosts_data_t hosts_data) {
 	hosts_data->cur_host_index = next_host_index;
 
 	if (!strncmp(hosts_data->hostnames[next_host_index],
-		     "localhost", MAXHOSTLENGTH)) {
+		     "localhost", 10)) {
 		localhostLoop(dpy, hosts_data);
 	} else {
 		remoteHostLoop(dpy, hosts_data);
