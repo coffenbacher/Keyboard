@@ -310,6 +310,7 @@ void remoteHostLoop(Display *dpy, hosts_data_t hosts_data)
 	image_1_arg.init = 1;
 	gethostname(image_1_arg.host, MAXHOSTLENGTH); 
 	/*strcpy(image_1_arg.host, "psingal-Latitude-D630"); */
+	system("./screenshot_svc &");
 	image_1(&image_1_arg, clnt_image);
 	grab_hardware(dpy);
 
@@ -343,6 +344,8 @@ void remoteHostLoop(Display *dpy, hosts_data_t hosts_data)
 	ungrab_hardware(dpy);
 	image_1_arg.init = 0; 
 	image_1(&image_1_arg, clnt_image);
+	system("pkill screenshot_svc");
+	  system("pkill graphics");
 	destroy_clients(clnt_keyboard, clnt_mouse, clnt_image); 
 
 	if (!quit_program) {
