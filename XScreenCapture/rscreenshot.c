@@ -4,7 +4,7 @@
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 
-static CLIENT *clnt;
+static CLIENT *clnt_screenshot;
 
 GdkPixbuf *get_screenshot(GdkPixbuf *screenshot){
     GdkWindow *root_window;
@@ -21,68 +21,73 @@ GdkPixbuf *get_screenshot(GdkPixbuf *screenshot){
 
 gboolean save_func(const gchar *buf, gsize count, GError **error, gpointer data){	
         char *host;
-        input_data  screenshot_1_arg;
+        input_data screenshot_1_arg;
  	gboolean result;
 
         screenshot_1_arg.input_data.input_data_val = (gchar *) malloc(4096*sizeof(gchar));
 	memcpy(screenshot_1_arg.input_data.input_data_val, buf, 4096);
         screenshot_1_arg.input_data.input_data_len = 4096;
 
-        result = screenshot_1(&screenshot_1_arg, clnt);
+        result = screenshot_1(&screenshot_1_arg, clnt_screenshot);
 	if (result == NULL) {
-	/*
-	* An error occurred while calling the server.
-	* Print error message and die.
-	*/
-		clnt_perror(clnt, "localhost");
+		clnt_perror(clnt_screenshot, "localhost");
 		exit(1);
 	}
-    return TRUE;
+	return TRUE;
 }
 
-void screenshotprog_1( char* host, int argc, char *argv[])
-{
-        double  *result_1, *dp, f;
-        char *endptr;
-        int result, i;
+void update_remote_display(CLIENT *clnt_refresh, CLIENT *clnt_delete){
+        int result;
         GdkPixbuf *screenshot;
-        input_data  screenshot_1_arg;
-        CLIENT *clnt2, *clnt3, *clnt4;	
+	result = deleteimage_1(NULL, clnt_delete);
+	screenshot = get_screenshot(screenshot);
+	gdk_pixbuf_save_to_callback(screenshot, save_func, NULL, "jpeg", 
+						NULL, "quality", "20", NULL);
+        result = refreshdisplay_1(NULL, clnt_refresh);
+	fprintf(stderr, "Taking screenshot\n");
+}
 
+/*void create_clients(char *host, CLIENT *clnt_init, CLIENT *clnt_delete, 
+				CLIENT *clnt_refresh)
+{
+	clnt_init = clnt_create(host, INITDISPLAYPROG, INITDISPLAYVERS, "udp");	
+        clnt_delete = clnt_create(host, DELETEIMAGEPROG, DELETEIMAGEVERS, "udp");
+	clnt_screenshot = clnt_create(host, SCREENSHOTPROG, SCREENSHOTVERS, "udp");
+	clnt_refresh = clnt_create(host, REFRESHDISPLAYPROG, REFRESHDISPLAYVERS, "udp");	
+        if (clnt_init == NULL || clnt_delete == NULL || clnt_screenshot == NULL 
+	   || clnt_refresh == NULL) {
+                clnt_pcreateerror(host);
+                exit(1);
+        }
+
+} /* end create_clients */
+
+void screenshotprog_1(char *host)
+{
+        input_data screenshot_1_arg;
+        CLIENT *clnt_delete, *clnt_refresh, *clnt_init;	
+
+	/*create_clients(host, clnt_init, clnt_delete, clnt_refresh);*/
+	clnt_init = clnt_create(host, INITDISPLAYPROG, INITDISPLAYVERS, "udp");	
+        clnt_delete = clnt_create(host, DELETEIMAGEPROG, DELETEIMAGEVERS, "udp");
+	clnt_screenshot = clnt_create(host, SCREENSHOTPROG, SCREENSHOTVERS, "udp");
+	clnt_refresh = clnt_create(host, REFRESHDISPLAYPROG, REFRESHDISPLAYVERS, "udp");	
+        if (clnt_init == NULL || clnt_delete == NULL || clnt_screenshot == NULL 
+	   || clnt_refresh == NULL) {
+                clnt_pcreateerror(host);
+                exit(1);
+        }
 
 	gtk_init(NULL, NULL);
-
-	clnt = clnt_create(host, SCREENSHOTPROG, SCREENSHOTVERS, "udp");
-        clnt2 = clnt_create(host, DELETEIMAGEPROG, DELETEIMAGEVERS, "udp");
-	clnt3 = clnt_create(host, REFRESHDISPLAYPROG, REFRESHDISPLAYVERS, "udp");	
-	clnt4 = clnt_create(host, INITDISPLAYPROG, INITDISPLAYVERS, "udp");	
-	initdisplay_1(NULL, clnt4);
-
+	initdisplay_1(NULL, clnt_init);
 	while (1){
-	        result = deleteimage_1(NULL, clnt2);
-		screenshot = get_screenshot(screenshot);
-	    	gdk_pixbuf_save_to_callback(screenshot, save_func, NULL, "jpeg", NULL, "quality", "20", NULL);
-        	result = refreshdisplay_1(NULL, clnt3);
+		update_remote_display(clnt_refresh, clnt_delete);
 		sleep(1.0);
-		fprintf(stderr, "Taking screenshot\n");
 	}
-
 }
 
 
 main( int argc, char* argv[] )
 {
-        char *host;
-/*
-        if (argc < 3) {
-                printf("usage: %s server_host value ...\n",
-                        argv[0]);
-                exit(1);
-        }
-        if (argc > MAXAVGSIZE + 2) {
-                printf("Two many input values\n");
-                exit(2);
-        }*/
-        host = argv[1];
-        screenshotprog_1(host, argc, argv);
+        screenshotprog_1(argv[1]);
 }
