@@ -36,7 +36,7 @@ typedef struct mouse_input mouse_input;
 
 struct image_input {
        int init;
-       char *host; 
+       char host[1024]; 
 };
 typedef struct image_input image_input; 
 
