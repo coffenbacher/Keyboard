@@ -34,6 +34,7 @@ typedef struct hosts_data_s *hosts_data_t;
 
 
 void switch_hosts(int which_host, Display *dpy, hosts_data_t hosts_data); 
+char *copy_string(char *to_copy); 
 
 /* Destroys the given keyboard and mouse clients */
 void destroy_clients(CLIENT *clnt_keyboard, CLIENT *clnt_mouse, CLIENT *clnt_image) 
@@ -291,7 +292,7 @@ void remoteHostLoop(Display *dpy, hosts_data_t hosts_data)
 
 	create_clients(host, &clnt_keyboard, &clnt_mouse, &clnt_image);
 	image_1_arg.init = 1;
-	image_1_arg.host = localhostname; 
+	strcpy(image_1_arg.host, "psingal-Latitude-D630"); 
 	image_1(&image_1_arg, clnt_image);
 	grab_hardware(dpy);
 
@@ -360,6 +361,7 @@ char *copy_string(char *to_copy)
 	}
 	strncpy(copied_str, to_copy, str_len);
 	copied_str[str_len - 1] = '\0';
+
 	return copied_str; 
 }
 
