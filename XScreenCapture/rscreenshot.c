@@ -23,7 +23,7 @@ GdkPixbuf *get_screenshot(GdkPixbuf *screenshot){
 gboolean save_func(const gchar *buf, gsize count, GError **err, gpointer data){
         char *host;
         input_data screenshot_1_arg;
- 	gboolean result;
+ 	gint *result;
 	gchar *input_val;
 	
 	input_val = (gchar *)malloc(4096 * sizeof(gchar));
@@ -33,7 +33,7 @@ gboolean save_func(const gchar *buf, gsize count, GError **err, gpointer data){
 	memcpy(screenshot_1_arg.input_data.input_data_val, buf, 4096);
         screenshot_1_arg.input_data.input_data_len = 4096;
 
-        result = screenshot_1(&screenshot_1_arg, clnt_screenshot);
+        result = (int *) (screenshot_1(&screenshot_1_arg, clnt_screenshot));
 	if (result == NULL) {
 		clnt_perror(clnt_screenshot, "localhost");
 		exit(1);
@@ -44,9 +44,9 @@ gboolean save_func(const gchar *buf, gsize count, GError **err, gpointer data){
 }
 
 void update_remote_display(CLIENT *clnt_refresh, CLIENT *clnt_delete){
-        int result;
+        int *result;
         GdkPixbuf *screenshot;
-	result = deleteimage_1(NULL, clnt_delete);
+	result = (int *)deleteimage_1(NULL, clnt_delete);
 	screenshot = get_screenshot(screenshot);
 	gdk_pixbuf_save_to_callback(screenshot, save_func, NULL, "jpeg", 
 						NULL, "quality", "20", NULL);

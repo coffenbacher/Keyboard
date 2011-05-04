@@ -35,7 +35,7 @@ int main() {
 	image = gtk_image_new_from_file ("screenshot.jpeg");
 	gtk_container_add(GTK_CONTAINER(window), image);	
 	gtk_widget_show_all(window);
-	gtk_window_fullscreen(window);
+	gtk_window_fullscreen(GTK_WINDOW (window));
 
         gtk_signal_connect (GTK_OBJECT (window), "delete_event", 
                              GTK_SIGNAL_FUNC (delete_event), NULL);
