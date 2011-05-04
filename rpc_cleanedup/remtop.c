@@ -43,12 +43,12 @@ void destroy_clients(CLIENT *clnt_keyboard, CLIENT *clnt_mouse)
 /* Creates the keyboard and mouse clients based on given host name. */
 void create_clients(char *host, CLIENT **clnt_keyboard, CLIENT **clnt_mouse)
 {
-        *clnt_keyboard = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "udp");
+        *clnt_keyboard = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "tcp");
 	if (*clnt_keyboard == NULL) {
 		clnt_pcreateerror(host);
                 exit(1);
 	}
-	*clnt_mouse = clnt_create(host, MOUSEPROG, MOUSEVERS, "udp");
+	*clnt_mouse = clnt_create(host, MOUSEPROG, MOUSEVERS, "tcp");
         if (*clnt_mouse == NULL) {
                 clnt_pcreateerror(host);
                 exit(1);
