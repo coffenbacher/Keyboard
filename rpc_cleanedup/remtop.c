@@ -340,6 +340,7 @@ void remoteHostLoop(Display *dpy, hosts_data_t hosts_data)
 	gethostname(image_1_arg.host, MAXHOSTLENGTH); 
 
 	system("./screenshot_svc &");
+	sleep(0.5);
 	image_1(&image_1_arg, clnt_image);
 	grab_hardware(dpy);
 
