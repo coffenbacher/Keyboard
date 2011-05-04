@@ -39,6 +39,8 @@ static ssize_t loop_write(int fd, const void*data, size_t size) {
     while (size > 0) {
         ssize_t r;
 
+	
+
         if ((r = write(fd, data, size)) < 0)
             return r;
 	/*printf("%02X", (int)data);*/
