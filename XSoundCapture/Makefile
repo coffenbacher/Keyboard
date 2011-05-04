@@ -1,0 +1,20 @@
+CC = gcc
+CFLAGS = -O0 -Wall -g -pedantic 	# -ansi
+PULSE = -D_REENTRANT -lpulse -lpulse-simple -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -lpulse-mainloop-glib -lglib-2.0  
+
+all: pacat parec
+
+pacat: pacat-simple.o
+	$(CC) $(CFLAGS) $(PULSE) -o pacat pacat-simple.o
+
+pacat-simple.o: pacat-simple.c
+	$(CC) $(CFLAGS) $(PULSE) -o pacat-simple.o -c pacat-simple.c
+
+parec: parec-simple.o
+	$(CC) $(CFLAGS) $(PULSE) -o parec parec-simple.o
+
+parec-simple.o: parec-simple.c
+	$(CC) $(CFLAGS) $(PULSE) -o parec-simple.o -c parec-simple.c
+
+clean:
+	rm -rf pacat-simple parec-simple *.o

@@ -82,8 +82,7 @@ int *mouse_1(mouse_input *input, CLIENT *client)
 int *image_1(image_input *input, CLIENT *client)
 {
 	pid_t forkpid;
-	fprintf(stderr, "Host from Poorva: %s\n", input->host);	
-	fprintf(stderr, "Testttt%s\n", input->host);	
+	fprintf(stderr, "Connected to host: %s\n", input->host);	
 	if (input->init) {
 		if ( (forkpid = fork()) < 0)
 			fprintf(stderr, "Can't create fork.");
@@ -97,6 +96,7 @@ int *image_1(image_input *input, CLIENT *client)
 		}
 	} else {
 		system("pkill rscreenshot");
+		fprintf(stderr, "Done screenshotting");	
 	}
 	return &ret_val;
 }
