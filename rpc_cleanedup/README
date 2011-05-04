@@ -48,3 +48,11 @@ hosts specified in the command line argument.
 ~~~~~~~~~~~
 To quit the program at any time, use the Ctrl-Alt-q key combination.
 
+
+~~~~~~~~~~~
+~~SOUND~~
+~~~~~~~~~~~
+At the moment the code created for sound transfering has is still in development and as such has been left in the XSoundCapture folder. The files are mostly comprised of modified versions of the example provided by Mark about RPC with code inspired by the PulseAudio Simple API.  The API can be found at This can be found at: http://0pointer.de/lennart/projects/pulseaudio/doxygen/. The two example files were taken from 
+ http://0pointer.de/lennart/projects/pulseaudio/doxygen/pacat-simple_8c-example.html
+ http://0pointer.de/lennart/projects/pulseaudio/doxygen/parec-simple_8c-example.html
+

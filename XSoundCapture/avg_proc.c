@@ -73,21 +73,20 @@ int *server_1(input_data *input, CLIENT *client)
         ssize_t r;
 	char *dp = input->input_data.input_data_val;
  
+/*
 	printf("server: buffer=");
         for (i = 1; i <= 100; i++) {
 		printf("%c ", *dp);
                 dp++;
         }
 	printf("\n");
-	
-	/*
+*/	
 	dp = input->input_data.input_data_val;
 
 	printf("writing\n");
         if (pa_simple_write(s_write, dp, (size_t) 1024, &error) < 0) {
             printf(": pa_simple_write() failed: %s\n", pa_strerror(error));
         }
-	*/
 	sum_avg = 1;
         return &sum_avg;
 }

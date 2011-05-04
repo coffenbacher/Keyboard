@@ -67,7 +67,7 @@ serverprog_1( char* host, int argc, char *argv[])
 	}
 
 
-
+/*
 
 	server_1_arg.input_data.input_data_val = (char*) malloc(1024*sizeof(char));
         dp = server_1_arg.input_data.input_data_val;
@@ -85,10 +85,10 @@ serverprog_1( char* host, int argc, char *argv[])
                 clnt_perror(clnt_server, "call failed:");
         }
         clnt_destroy( clnt_server );
+*/
 
 
 
-/*
 	startReadServer();
 	clnt_server = clnt_create(host, SERVERPROG, SERVERVERS, "udp");
 	if (clnt_server == NULL) {
@@ -98,6 +98,7 @@ serverprog_1( char* host, int argc, char *argv[])
 	}
         server_1_arg.input_data.input_data_val = (char*) malloc(1024*sizeof(char));
 
+/*
 	dp = server_1_arg.input_data.input_data_val;
         for ( i = 0; i < 1024; i++) {
                 *dp = (char)i;
@@ -111,7 +112,7 @@ serverprog_1( char* host, int argc, char *argv[])
         	printf("result_2 = %i\n", *result_2);
 	}
 */
-/*
+
 	for (i = 0; i < 1000; i++) {
         	printf("i=%i\n", i);
 
@@ -133,7 +134,7 @@ serverprog_1( char* host, int argc, char *argv[])
 		}				
 		printf("result_2 = %i\n", *result_2);
 	}
-*/	
+	
 	control_1_arg.flag = 3;
         result_1 = control_1(&control_1_arg, clnt_control);
 	if (result_1 == NULL) {
