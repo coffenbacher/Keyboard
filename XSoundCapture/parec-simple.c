@@ -41,6 +41,7 @@ static ssize_t loop_write(int fd, const void*data, size_t size) {
 
         if ((r = write(fd, data, size)) < 0)
             return r;
+	/*printf("%02X", (int)data);*/
 
         if (r == 0)
             break;
@@ -63,6 +64,7 @@ int main(int argc, char*argv[]) {
     pa_simple *s = NULL;
     int ret = 1;
     int error;
+    int i,j;
 
     /* Create the recording stream */
     if (!(s = pa_simple_new(NULL, argv[0], PA_STREAM_RECORD, NULL, "record", &ss, NULL, NULL, &error))) {
@@ -72,13 +74,14 @@ int main(int argc, char*argv[]) {
 
     for (;;) {
         uint8_t buf[BUFSIZE];
-
+	
+	/*printf("%i\n", i);*/
         /* Record some data ... */
-        if (pa_simple_read(s, buf, sizeof(buf), &error) < 0) {
+	 if (pa_simple_read(s, buf, sizeof(buf), &error) < 0) {
             fprintf(stderr, __FILE__": pa_simple_read() failed: %s\n", pa_strerror(error));
             goto finish;
-        }
-
+	    }
+	 /*printf("read\n");*/
         /* And write it to STDOUT */
         if (loop_write(STDOUT_FILENO, buf, sizeof(buf)) != sizeof(buf)) {
             fprintf(stderr, __FILE__": write() failed: %s\n", strerror(errno));
