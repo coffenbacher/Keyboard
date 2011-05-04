@@ -10,6 +10,12 @@ between multiple remote computers and the local computer itself.  In addition,
 whenever connected to a remote computer, you will also receive screenshots of
 the other computer.   
 
+*************
+***MAKING****
+*************
+The makefile is included.  Just use the make command to make all the
+files.  
+
 ***********************************************
 ****STARTING THE SERVICE ON THE REMOTE SIDE****
 ***********************************************
