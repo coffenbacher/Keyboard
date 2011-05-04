@@ -10,11 +10,16 @@ between multiple remote computers and the local computer itself.  In addition,
 whenever connected to a remote computer, you will also receive screenshots of
 the other computer.   
 
+<<<<<<< HEAD
 *************
 ***MAKING****
 *************
 The makefile is included.  Just use the make command to make all the
 files.  
+=======
+Version control is available at:
+https://github.com/coffenbacher/Keyboard
+>>>>>>> b58c6ed72258a084832e90e1a5c2ff752804c1f6
 
 ***********************************************
 ****STARTING THE SERVICE ON THE REMOTE SIDE****
