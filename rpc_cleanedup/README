@@ -1,0 +1,47 @@
+*************************************************
+
+****************  USING REMTOP  ****************
+
+*************************************************
+
+This program is intended to work like a remote desktop.  It  will allow you
+to control the mouse and keyboard of remote computers and be able to switch
+between multiple remote computers and the local computer itself.  In addition,
+whenever connected to a remote computer, you will also receive screenshots of
+the other computer.   
+
+***********************************************
+****STARTING THE SERVICE ON THE REMOTE SIDE****
+***********************************************
+All remote computers to which the local computer will want to connect must
+    start the remtop service:
+$ ./remtop_svc &
+
+*********************************************
+****RUNNING THE PROGRAM ON THE LOCAL SIDE****
+*********************************************
+The local computer needs to then run the remtop executable and provide all
+the host names/IP addresses that it wants to connect to as command line 
+arguments.  All of these MUST be valid hosts running the service.
+Here is an example:
+$ ./remtop 10.42.52.43 charlie-laptop 10.54.42.52
+
+~~~~~~~~~~~~~~~~~~~
+~~SWITCHING HOSTS~~
+~~~~~~~~~~~~~~~~~~~
+The program will start by allowing the local computer to control the mouse and
+keyboard of the first host specified.  The user can use the Ctrl-Shift-Up
+key combination to switch to the next host and the Ctrl-Shift-Down key
+combination to switch to the previous host. 
+
+The Ctrl-Shift-l key can be used to switch to the local host and regain
+control over one's own computer.  A valid local host address may also be
+specified as a command line argument with the rest of the host names.  
+Use Ctrl-Shift-Up and Ctrl-Shift-Down to go back to switching between the
+hosts specified in the command line argument.  
+
+~~~~~~~~~~~
+~~QUITING~~
+~~~~~~~~~~~
+To quit the program at any time, use the Ctrl-Alt-q key combination.
+
