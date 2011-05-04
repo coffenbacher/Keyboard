@@ -8,17 +8,16 @@
  * 200 numbers.
  */
 
-const MAXAVGSIZE  = 1024;
+const MAXAVGSIZE  = 200;
 
 struct input_data {
-	int flag;
-        char input_data<MAXAVGSIZE>;
+        double input_data<200>;
 };
 
 typedef struct input_data input_data;
 
 program AVERAGEPROG {
         version AVERAGEVERS {
-                int AVERAGE(input_data) = 1;
+                double AVERAGE(input_data) = 1;
         } = 1;
 } = 22855;

@@ -12,7 +12,7 @@ const MAXAVGSIZE  = 1024;
 
 struct input_data {
 	int flag;
-        char input_data<MAXAVGSIZE>;
+        char input_data<200>;
 };
 
 typedef struct input_data input_data;

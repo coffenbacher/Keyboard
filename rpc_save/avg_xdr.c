@@ -12,7 +12,7 @@ xdr_input_data (XDR *xdrs, input_data *objp)
 
 	 if (!xdr_int (xdrs, &objp->flag))
 		 return FALSE;
-	 if (!xdr_array (xdrs, (char **)&objp->input_data.input_data_val, (u_int *) &objp->input_data.input_data_len, MAXAVGSIZE,
+	 if (!xdr_array (xdrs, (char **)&objp->input_data.input_data_val, (u_int *) &objp->input_data.input_data_len, 200,
 		sizeof (char), (xdrproc_t) xdr_char))
 		 return FALSE;
 	return TRUE;

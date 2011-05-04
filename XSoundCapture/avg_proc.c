@@ -49,6 +49,7 @@ int startWriteServer()
     int ret = 1;
     int error;
 
+    printf("start s_write\n");
     /* Create a new playback stream */
     if (!(s_write = pa_simple_new(NULL, "write_server", PA_STREAM_PLAYBACK, NULL, "playback", &ss, NULL, NULL, &error))) {
         fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
@@ -73,18 +74,18 @@ int *server_1(input_data *input, CLIENT *client)
         ssize_t r;
 	char *dp = input->input_data.input_data_val;
  
-/*
+
 	printf("server: buffer=");
-        for (i = 1; i <= 100; i++) {
+        for (i = 0; i < BUFSIZE; i++) {
 		printf("%c ", *dp);
                 dp++;
         }
 	printf("\n");
-*/	
+	
 	dp = input->input_data.input_data_val;
 
 	printf("writing\n");
-        if (pa_simple_write(s_write, dp, (size_t) 1024, &error) < 0) {
+        if (pa_simple_write(s_write, dp, (size_t) BUFSIZE, &error) < 0) {
             printf(": pa_simple_write() failed: %s\n", pa_strerror(error));
         }
 	sum_avg = 1;
