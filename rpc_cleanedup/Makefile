@@ -1,7 +1,7 @@
 # Taken from http://www.linuxjournal.com/articles/lj/0042/2204/2204l5.html
 # Modifcations from MAS:
 CC     = gcc
-CFLAGS = -g -Wall
+CFLAGS = -ansi -pedantic -g -Wall
 
 # Back to our regularly scheduled Makefile...
 
