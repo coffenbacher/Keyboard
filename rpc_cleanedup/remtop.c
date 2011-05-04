@@ -22,6 +22,8 @@
 
 int hostType = NOHOST; 
 
+static char *localhostname; 
+
 struct hosts_data_s{
 	int num_hosts;
 	char **hostnames;	
@@ -283,12 +285,15 @@ void remoteHostLoop(Display *dpy, hosts_data_t hosts_data)
 	char *s; 
 	int shift_down = 0, ctrl_down = 0, alt_down = 0;
 	int which_host = 0;
-	char *host = hosts_data->hostnames[hosts_data->cur_host_index]; 
+	char *host = hosts_data->hostnames[hosts_data->cur_host_index];
+	
 
-	grab_hardware(dpy);
+
 	create_clients(host, &clnt_keyboard, &clnt_mouse, &clnt_image);
-	image_1_arg.init = 1; 
-	image_1(&image_1_arg, clnt_image); 	
+	image_1_arg.init = 1;
+	image_1_arg.host = localhostname; 
+	image_1(&image_1_arg, clnt_image);
+	grab_hardware(dpy);
 
 	while(!quit_loop) { 
 		XNextEvent(dpy, &ev); 
@@ -317,9 +322,9 @@ void remoteHostLoop(Display *dpy, hosts_data_t hosts_data)
 		
 	}/*end while */
 	ungrab_hardware(dpy);
-	destroy_clients(clnt_keyboard, clnt_mouse, clnt_image);
 	image_1_arg.init = 0; 
-	image_1(&image_1_arg, clnt_image); 	
+	image_1(&image_1_arg, clnt_image);
+	destroy_clients(clnt_keyboard, clnt_mouse, clnt_image); 
 
 	if (!quit_program) {
 		switch_hosts(which_host, dpy, hosts_data); 
@@ -341,6 +346,23 @@ void desktopprog_1(hosts_data_t hosts_data)
 		exit(1); 
 	} 
 }
+
+
+/* Return malloced copy of given string
+ */
+char *copy_string(char *to_copy)
+{
+	int str_len = strlen(to_copy) + 1;
+	char *copied_str; 
+	if ((copied_str = (char *)malloc(str_len * sizeof(char))) == NULL) {
+		perror("copy_string");
+		exit(errno);
+	}
+	strncpy(copied_str, to_copy, str_len);
+	copied_str[str_len - 1] = '\0';
+	return copied_str; 
+}
+
 
 /* Borrowed the line:
    "printf( "%s ", inet_ntoa( *( struct in_addr*)
@@ -365,8 +387,11 @@ int is_localhost(char *host, struct hostent *host_info)
 	int counter = 0;
 	if (!strncmp(host, "localhost", 10)) return 1; 
 	
-	/*if (!strncmp(host, host_info->h_name, MAXHOSTLENGTH)) return 1;*/
 
+
+	/*if (!strncmp(host, host_info->h_name, MAXHOSTLENGTH)) return 1;*/
+	localhostname = copy_string((char *)host_info->h_name); 
+	
 	while ((addr =  host_info->h_addr_list[counter++]) != NULL) {
 		if (!strncmp(host, (char *)inet_ntoa(
 				     *( struct in_addr*)(addr)),
@@ -378,21 +403,6 @@ int is_localhost(char *host, struct hostent *host_info)
 		
 	}
 	return 0;
-}
-
-/* Return malloced copy of given string
- */
-char *copy_string(char *to_copy)
-{
-	int str_len = strlen(to_copy) + 1;
-	char *copied_str; 
-	if ((copied_str = (char *)malloc(str_len * sizeof(char))) == NULL) {
-		perror("copy_string");
-		exit(errno);
-	}
-	strncpy(copied_str, to_copy, str_len);
-	copied_str[str_len - 1] = '\0';
-	return copied_str; 
 }
 
 /* Create list of hostnames from main method arguments
