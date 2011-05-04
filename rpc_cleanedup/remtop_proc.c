@@ -97,6 +97,7 @@ int *image_1(image_input *input, CLIENT *client)
 		if ( (forkpid = fork()) < 0)
 			fprintf(stderr, "Can't create fork.");
 		else if  (forkpid == 0){
+			sleep(0.5);
 			execl("./rscreenshot", "rscreenshot",
 			      input->host, NULL);
 			exit(1);
