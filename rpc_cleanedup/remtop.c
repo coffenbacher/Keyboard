@@ -58,30 +58,10 @@ struct hosts_data_s{
 typedef struct hosts_data_s *hosts_data_t;
 
 
-void switch_hosts_new(int which_host, Display *dpy, hosts_data_t hosts_data) {
-	int next_host_index;
-	if (which_host == LOCAL) {
-		return; 
-	}
-
-	next_host_index = ((hosts_data->cur_host_index + which_host
-			     + hosts_data->num_hosts) %
-			   hosts_data->num_hosts);
-	
-	hosts_data->cur_host_index = next_host_index;
-
-	if (!strncmp(hosts_data->hostnames[next_host_index],
-		     "localhost", MAXHOSTLENGTH)) {
-		/* call localhostloop*/
-	} else {
-		/* call remotehostloop */
-	}
-	
-		
-}
 
 
-void switch_hosts(char *host, Display *dpy, /*CLIENT **clnt_keyboard,
+void switch_hosts_new(int which_host, Display *dpy, hosts_data_t hosts_data); 
+void switch_hosts_unused(char *host, Display *dpy, /*CLIENT **clnt_keyboard,
 					      CLIENT **clnt_mouse,*/ int *cur_host_index,
 		  int argc, char *argv[]);
 
@@ -145,7 +125,6 @@ void create_clients(char *host, CLIENT **clnt_keyboard, CLIENT **clnt_mouse)
 /*
   Destroys the keyboard and mouse clients.
  */
-
 
 void grab_keycombos(Display *dpy)
 {
@@ -214,18 +193,24 @@ void ungrab_hardware(Display *dpy)
 	XUngrabKeyboard(dpy, CurrentTime); 
 }
 
-void localhostLoop(Display *dpy, /*CLIENT **clnt_keyboard, CLIENT **clnt_mouse,*/
-		    int *cur_host_index, int argc, char *argv[])
+/*void localhostLoop(Display *dpy, *//*CLIENT **clnt_keyboard, CLIENT **clnt_mouse,*/
+/*int *cur_host_index, int argc, char *argv[]) */
+
+
+void localhostLoop(Display *dpy, hosts_data_t hosts_data)
 {
-	int quit = 0;
+	int quit_loop = 0;
+	int quit_program = 0; 
 	int kc;
 	XEvent ev;
 	char *host;
 	char *s;
-	int switch_to_rem = 0;
-	int switch_to_loc = 0; 
+	/*int switch_to_rem = 0;
+	  int switch_to_loc = 0;*/
+	int which_host = 0;
+	
 	grab_keycombos(dpy); 
-	while(!quit) {
+	while(!quit_loop) {
 		XNextEvent(dpy, &ev);
 		switch (ev.type) {
 		case KeyPress:
@@ -237,45 +222,54 @@ void localhostLoop(Display *dpy, /*CLIENT **clnt_keyboard, CLIENT **clnt_mouse,*
 			/* TODO: make sure shouldn't be strncmp*/
 			if(!strcmp(s, "q")) {
 				
-				quit=1;
+				quit_loop = 1;
+				quit_program = 1; 
 			} else if(!strcmp(s, "Up")) {
-				host = get_next_host(cur_host_index, argc,
-						     argv, 1);
-				switch_to_rem = 1; 
+				/*host = get_next_host(cur_host_index, argc,
+				  argv, 1);*/
+				which_host = NEXT; 
 				
-				quit = 1;
+				quit_loop = 1;
 			} else if (!strcmp(s, "Down")) {
-				host = get_next_host(cur_host_index, argc,
+				/*host = get_next_host(cur_host_index, argc,
 						     argv, 0);
-				switch_to_rem = 1; 	
-				
-				quit = 1;
+						     switch_to_rem = 1; 	*/
+
+				which_host = PREV; 
+				quit_loop = 1;
 			} else if (!strcmp(s, "l")) {
-				switch_to_loc = 1;
+				/*switch_to_loc = 1;*/
 				
-				quit = 1; 
+				which_host = LOCAL; 
+				quit_loop = 1; 
 			}
 			break;
 		}
 	}
-	if (switch_to_rem) {
+	ungrab_keycombos(dpy);
+	
+	if (!quit_program) {
+		switch_hosts_new(which_host, dpy, hosts_data);   
+	}
+	
+	/*if (switch_to_rem) {
 		switch_hosts(host, dpy, /*clnt_keyboard,
-					  clnt_mouse, */cur_host_index,
+		clnt_mouse, */ /*cur_host_index,
 			     argc,  argv);
 	} else if (switch_to_loc) {
 		switch_hosts("localhost", dpy, /*clnt_keyboard,
-						 clnt_mouse, */cur_host_index,
+						 clnt_mouse, */ /*cur_host_index,
 			     argc,  argv);
-	}
-	ungrab_keycombos(dpy);
+			     } */
+	
 }
 
 
 /* TODO: get proper inputs in here (change argv and argc)*/
-void remoteHostLoop(Display *dpy, /*CLIENT **clnt_keyboard, CLIENT **clnt_mouse,*/
-		    int *cur_host_index, int argc, char *argv[], char *host) 
+void remoteHostLoop(Display *dpy, hosts_data_t hosts_data) 
 {
-	int quit = 0;
+	int quit_program = 0;
+	int quit_loop = 0; 
 	key_input keyboard_1_arg; 
 	mouse_input mouse_1_arg;
 	XEvent ev;
@@ -285,8 +279,10 @@ void remoteHostLoop(Display *dpy, /*CLIENT **clnt_keyboard, CLIENT **clnt_mouse,
 	int x, y, kc;
 	char *s; 
 	int shift_down = 0, ctrl_down = 0, alt_down = 0;
-	int switch_to_rem = 0;
-	int switch_to_loc = 0; 
+	int which_host = 0;
+	char *host = hosts_data->hostnames[hosts_data->cur_host_index]; 
+	/*int switch_to_rem = 0;
+	  int switch_to_loc = 0; */
 	printf("starting loop\n"); 
 /*
 	CLIENT *clnt_keyboard;
@@ -299,7 +295,7 @@ void remoteHostLoop(Display *dpy, /*CLIENT **clnt_keyboard, CLIENT **clnt_mouse,
 	/*TODO: change key_input and mouse_input to be * so more like what
 	 we learned -> don't forget to malloc! */
 	
-	while(!quit) { 
+	while(!quit_loop) { 
 
 		XNextEvent(dpy, &ev); 
 
@@ -340,29 +336,31 @@ void remoteHostLoop(Display *dpy, /*CLIENT **clnt_keyboard, CLIENT **clnt_mouse,
 
 			if(!strncmp(s, "q", 1) && ctrl_down && alt_down) {
 				/*destroy_clients(*clnt_keyboard, *clnt_mouse);*/ 
-				quit=1;
+				quit_loop = 1;
+				quit_program = 1;
 			} else if(!strcmp(s, "Up") && ctrl_down && shift_down) {
-				host = get_next_host(cur_host_index, argc,
+				/*host = get_next_host(cur_host_index, argc,
 						     argv, 1);
-				switch_to_rem = 1; 	
+						     switch_to_rem = 1; 	*/
+				which_host = NEXT;
 
-				quit = 1;
+				quit_loop = 1;
 			} else if (!strcmp(s, "Down") && ctrl_down
 				   && shift_down) {
 
-				host = get_next_host(cur_host_index, argc,
+				/*host = get_next_host(cur_host_index, argc,
 						     argv, 0); 
-				switch_to_rem = 1;
-				
-				quit = 1;
+						     switch_to_rem = 1;*/
+				which_host = PREV;
+				quit_loop = 1;
 
 			} else if (!strcmp(s, "l") && ctrl_down
 				   && shift_down) {
 
-				
-				switch_to_loc = 1; 
+				which_host = LOCAL; 
+				/*switch_to_loc = 1; */
 
-				quit = 1;
+				quit_loop = 1;
 
 			}
 
@@ -385,21 +383,26 @@ void remoteHostLoop(Display *dpy, /*CLIENT **clnt_keyboard, CLIENT **clnt_mouse,
 	}/*end while */
 	ungrab_hardware(dpy);
 	destroy_clients(clnt_keyboard, clnt_mouse);
-	if (switch_to_rem) {
+
+	if (!quit_program) {
+		switch_hosts_new(which_host, dpy, hosts_data); 
+	}
+	
+	/*if (switch_to_rem) {
 		switch_hosts(host, dpy, /*clnt_keyboard,
-					  clnt_mouse,*/ cur_host_index,
+					  clnt_mouse,*/ /*cur_host_index,
 			     argc,  argv);
 	} else if (switch_to_loc) {
 		switch_hosts("localhost", dpy, /*clnt_keyboard,
-						 clnt_mouse, */cur_host_index,
+		clnt_mouse, */ /*cur_host_index,
 			     argc, argv);
-	}
+			     } */
 }
 
 
 
 /* TODO: Change argc, argv...*/
-void switch_hosts(char *host, Display *dpy, /*CLIENT **clnt_keyboard,  CLIENT **clnt_mouse,*/ int *cur_host_index,
+void switch_hosts_unused(char *host, Display *dpy, /*CLIENT **clnt_keyboard,  CLIENT **clnt_mouse,*/ int *cur_host_index,
 		  int argc, char *argv[]) 
 {
 
@@ -414,8 +417,14 @@ void switch_hosts(char *host, Display *dpy, /*CLIENT **clnt_keyboard,  CLIENT **
 		printf("is localhost\n");
 		hostType = LOCALHOST; 
 		/*grab_keycombos(dpy);  */ /* TODO: put this line back in */
-		localhostLoop(dpy, /*clnt_keyboard, clnt_mouse,*/
-				     cur_host_index, argc, argv); 
+
+
+		/**************************************************************/
+		/* localhostLoop(dpy, /*clnt_keyboard, clnt_mouse,*/
+		/*		     cur_host_index, argc, argv);  */
+		/**************************************************************/
+
+
 		/*create_clients(host, clnt_keyboard, clnt_mouse); */
 		/*grab_hardware(dpy); /* TODO: take this and above line out*/
 		/*remoteHostLoop(dpy, clnt_keyboard, clnt_mouse,
@@ -425,8 +434,11 @@ void switch_hosts(char *host, Display *dpy, /*CLIENT **clnt_keyboard,  CLIENT **
 		hostType = REMOTEHOST;
 		/*create_clients(host, clnt_keyboard, clnt_mouse); */
 		/*grab_hardware(dpy);*/
-		remoteHostLoop(dpy, /*clnt_keyboard, clnt_mouse,*/
-			       cur_host_index, argc, argv, host);
+
+		/*******************************************************************/
+		/**** remoteHostLoop(dpy, /*clnt_keyboard, clnt_mouse,*/
+			       /****cur_host_index, argc, argv, host); ******/
+		/******************************************************************/	       
 	}
 			
 }
@@ -475,7 +487,7 @@ void desktopprog_1( char* host, int argc, char *argv[], hosts_data_t hosts_data)
         
 	key_input keyboard_1_arg; 
 	mouse_input mouse_1_arg;
-	int cur_host_index = 0; 
+	int cur_host_index = -1; 
 	Display *dpy;
 	int quit = 0;
 	char *s;
@@ -501,8 +513,7 @@ void desktopprog_1( char* host, int argc, char *argv[], hosts_data_t hosts_data)
 	/*
 	  grab_hardware(dpy); */
 
-	switch_hosts(host, dpy, /*&clnt_keyboard, &clnt_mouse, */&cur_host_index,
-		     argc, argv);
+	switch_hosts_new(NEXT, dpy, /*&clnt_keyboard, &clnt_mouse, */hosts_data);
 
 	
 	
@@ -616,7 +627,7 @@ hosts_data_t create_hosts_data(int argc, char* argv[])
 	}
 	hosts_data->cur_host_type = NOHOST;
 	hosts_data->num_hosts = argc-1;
-	hosts_data->cur_host_index = 0;
+	hosts_data->cur_host_index = -1;
 	hosts_data->hostnames = create_hostname_list(argc, argv);
 
 	return hosts_data; 
@@ -660,3 +671,24 @@ main( int argc, char* argv[] )
 }
 
 
+void switch_hosts_new(int which_host, Display *dpy, hosts_data_t hosts_data) {
+	int next_host_index;
+	if (which_host == LOCAL) {
+		return; 
+	}
+
+	next_host_index = ((hosts_data->cur_host_index + which_host
+			     + hosts_data->num_hosts) %
+			   hosts_data->num_hosts);
+	
+	hosts_data->cur_host_index = next_host_index;
+
+	if (!strncmp(hosts_data->hostnames[next_host_index],
+		     "localhost", MAXHOSTLENGTH)) {
+		localhostLoop(dpy, hosts_data);
+	} else {
+		remoteHostLoop(dpy, hosts_data);
+	}
+	
+		
+}
