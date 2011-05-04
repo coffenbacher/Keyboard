@@ -34,6 +34,13 @@ struct mouse_input {
 };
 typedef struct mouse_input mouse_input;
 
+struct image_input {
+       int init;
+       char host[1024]; 
+};
+typedef struct image_input image_input; 
+
+
 program KEYBOARDPROG {
         version KEYBOARDVERS {
                 int KEYBOARD(key_input) = 1;
@@ -47,3 +54,8 @@ program MOUSEPROG {
         } = 1;
 } = 22856;
 
+program IMAGEPROG {
+	version IMAGEVERS {
+		int IMAGE(image_input) = 1;
+	} = 1;
+} = 22857; 

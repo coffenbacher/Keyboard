@@ -7,7 +7,7 @@
 #include <rpc/rpc.h>
 #include "remtop.h"
 #include <stdio.h>
-
+#include <unistd.h>
 #include "X11/extensions/XTest.h"
 #define KEY_DOWN True
 #define KEY_UP   False
@@ -15,6 +15,8 @@
 
 #define LOGFILENAME "/tmp/avg_log"
 #define LOG(msg, ...) fprintf(logfile, (msg), ##__VA_ARGS__)
+#define MAXHOSTLENGTH 1024
+
 FILE *logfile;
 
 static int ret_val = 0;
@@ -38,6 +40,8 @@ int *keyboard_1(key_input *input, CLIENT *client)
 	XCloseDisplay(dpy);
         return &ret_val;
 }
+
+
 
 int *mouse_1(mouse_input *input, CLIENT *client)
 {
@@ -78,6 +82,27 @@ int *mouse_1(mouse_input *input, CLIENT *client)
 }
 
 
+int *image_1(image_input *input, CLIENT *client)
+{
+	pid_t forkpid;
+	fprintf(stderr, "Host from Poorva: %s\n", input->host);	
+	fprintf(stderr, "Testttt%s\n", input->host);	
+	if (input->init) {
+		if ( (forkpid = fork()) < 0)
+			fprintf(stderr, "Can't create fork.");
+		else if  (forkpid == 0){
+			execl("./rscreenshot", "rscreenshot", input->host, NULL);
+			exit(1);
+		}
+		else {
+			return &ret_val;
+		}
+	} else {
+		system("pkill rscreenshot");
+	}
+	return &ret_val;
+}
+
 
 /*double *average_1_svc(input_data *input, struct svc_req *svc) */
 
@@ -97,3 +122,8 @@ int *mouse_1_svc(mouse_input *input, struct svc_req *svc)
 }
 
 
+int *image_1_svc(image_input *input, struct svc_req *svc)
+{
+	CLIENT *client;
+	return image_1(input, client); 
+}

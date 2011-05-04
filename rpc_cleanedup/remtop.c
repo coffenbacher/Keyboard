@@ -22,6 +22,8 @@
 
 int hostType = NOHOST; 
 
+static char *localhostname; 
+
 struct hosts_data_s{
 	int num_hosts;
 	char **hostnames;	
@@ -32,16 +34,18 @@ typedef struct hosts_data_s *hosts_data_t;
 
 
 void switch_hosts(int which_host, Display *dpy, hosts_data_t hosts_data); 
+char *copy_string(char *to_copy); 
 
 /* Destroys the given keyboard and mouse clients */
-void destroy_clients(CLIENT *clnt_keyboard, CLIENT *clnt_mouse) 
+void destroy_clients(CLIENT *clnt_keyboard, CLIENT *clnt_mouse, CLIENT *clnt_image) 
 {
         clnt_destroy( clnt_keyboard );
-	clnt_destroy( clnt_mouse ); 
+	clnt_destroy( clnt_mouse );
+	clnt_destroy( clnt_image ); 
 } /* end destroy_clients */
 
 /* Creates the keyboard and mouse clients based on given host name. */
-void create_clients(char *host, CLIENT **clnt_keyboard, CLIENT **clnt_mouse)
+void create_clients(char *host, CLIENT **clnt_keyboard, CLIENT **clnt_mouse, CLIENT **clnt_image)
 {
         *clnt_keyboard = clnt_create(host, KEYBOARDPROG, KEYBOARDVERS, "tcp");
 	if (*clnt_keyboard == NULL) {
@@ -52,7 +56,12 @@ void create_clients(char *host, CLIENT **clnt_keyboard, CLIENT **clnt_mouse)
         if (*clnt_mouse == NULL) {
                 clnt_pcreateerror(host);
                 exit(1);
-	} 
+	}
+	*clnt_image = clnt_create(host, IMAGEPROG, IMAGEVERS, "tcp");
+        if (*clnt_image == NULL) {
+                clnt_pcreateerror(host);
+                exit(1);
+	}
 } /* end create_clients */
 
 /* grab single keycombo with given modifiers and keycode */
@@ -195,11 +204,11 @@ void remoteHost_KeyPress(Display *dpy, XEvent *ev, CLIENT *clnt_keyboard,
 	if (!strncmp(s, "Alt", 3)) *alt_down = 1;
 	if (!strncmp(s, "Control", 7)) *ctrl_down = 1;
 	if (!strncmp(s, "Shift", 5)) *shift_down = 1;
-	
+	/*
 	if(!strncmp(s, "q", 1) && *ctrl_down && *alt_down) {
 		*quit_loop = 1;
 		*quit_program = 1;
-	} else if(!strcmp(s, "Up") && ctrl_down && shift_down) {
+	} else if(!strcmp(s, "Up") && *ctrl_down && *shift_down) {
 		*which_host = NEXT;
 		*quit_loop = 1;
 	} else if (!strcmp(s, "Down") && *ctrl_down
@@ -211,13 +220,14 @@ void remoteHost_KeyPress(Display *dpy, XEvent *ev, CLIENT *clnt_keyboard,
 		*which_host = LOCAL; 
 		*quit_loop = 1;
 	}
-
+	*/
 }
 
 /* Perform necessary actions for when a key is released when running on
  remote server */
 void remoteHost_KeyRelease(Display *dpy, XEvent *ev, CLIENT *clnt_keyboard,
-			 int *alt_down, int *ctrl_down, int *shift_down)
+			   int *alt_down, int *ctrl_down, int *shift_down,
+			   int *quit_loop, int *quit_program, int *which_host)
 {
 	key_input keyboard_1_arg; 
 	int kc = ((XKeyReleasedEvent*)ev)->keycode;
@@ -226,7 +236,22 @@ void remoteHost_KeyRelease(Display *dpy, XEvent *ev, CLIENT *clnt_keyboard,
 	keyboard_1_arg.keycode = kc;
 	keyboard_1(&keyboard_1_arg, clnt_keyboard); 
 	
-	s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0)); 
+	s = XKeysymToString(XKeycodeToKeysym(dpy, kc, 0));
+
+	if(!strncmp(s, "q", 1) && *ctrl_down && *alt_down) {
+		*quit_loop = 1;
+		*quit_program = 1;
+	} else if(!strcmp(s, "Up") && *ctrl_down && *shift_down) {
+		*which_host = NEXT;
+		*quit_loop = 1;
+	} else if (!strcmp(s, "Down") && *ctrl_down && *shift_down) {
+		*which_host = PREV;
+		*quit_loop = 1;
+	} else if (!strcmp(s, "l") && *ctrl_down && *shift_down) {
+		*which_host = LOCAL; 
+		*quit_loop = 1;
+	}
+	
 	if (!strncmp(s, "Alt", 3)) *alt_down = 0;
 	if (!strncmp(s, "Control", 7)) *ctrl_down = 0;
 	if (!strncmp(s, "Shift", 5)) *shift_down = 0;
@@ -267,19 +292,27 @@ void remoteHostLoop(Display *dpy, hosts_data_t hosts_data)
 	int quit_loop = 0; 
 	key_input keyboard_1_arg; 
 	mouse_input mouse_1_arg;
+	image_input image_1_arg; 
 	XEvent ev;
 	CLIENT *clnt_keyboard;
 	CLIENT *clnt_mouse;
+	CLIENT *clnt_image; 
 	int button;
 	int x, y, kc;
 	char *s; 
 	int shift_down = 0, ctrl_down = 0, alt_down = 0;
 	int which_host = 0;
-	char *host = hosts_data->hostnames[hosts_data->cur_host_index]; 
+	char *host = hosts_data->hostnames[hosts_data->cur_host_index];
+	
 
+
+	create_clients(host, &clnt_keyboard, &clnt_mouse, &clnt_image);
+	image_1_arg.init = 1;
+	gethostname(image_1_arg.host, MAXHOSTLENGTH); 
+	/*strcpy(image_1_arg.host, "psingal-Latitude-D630"); */
+	system("./screenshot_svc &");
+	image_1(&image_1_arg, clnt_image);
 	grab_hardware(dpy);
-	create_clients(host, &clnt_keyboard, &clnt_mouse); 
-	printf("created clients\n");	
 
 	while(!quit_loop) { 
 		XNextEvent(dpy, &ev); 
@@ -302,13 +335,18 @@ void remoteHostLoop(Display *dpy, hosts_data_t hosts_data)
 		case KeyRelease:
 			remoteHost_KeyRelease(dpy, &ev, clnt_keyboard,
 					      &alt_down, &ctrl_down,
-					      &shift_down); 
+					      &shift_down, &quit_loop,
+					      &quit_program, &which_host); 
 			break;
 		} 
 		
 	}/*end while */
 	ungrab_hardware(dpy);
-	destroy_clients(clnt_keyboard, clnt_mouse);
+	image_1_arg.init = 0; 
+	image_1(&image_1_arg, clnt_image);
+	system("pkill screenshot_svc");
+	  system("pkill graphics");
+	destroy_clients(clnt_keyboard, clnt_mouse, clnt_image); 
 
 	if (!quit_program) {
 		switch_hosts(which_host, dpy, hosts_data); 
@@ -330,6 +368,24 @@ void desktopprog_1(hosts_data_t hosts_data)
 		exit(1); 
 	} 
 }
+
+
+/* Return malloced copy of given string
+ */
+char *copy_string(char *to_copy)
+{
+	int str_len = strlen(to_copy) + 1;
+	char *copied_str; 
+	if ((copied_str = (char *)malloc(str_len * sizeof(char))) == NULL) {
+		perror("copy_string");
+		exit(errno);
+	}
+	strncpy(copied_str, to_copy, str_len);
+	copied_str[str_len - 1] = '\0';
+
+	return copied_str; 
+}
+
 
 /* Borrowed the line:
    "printf( "%s ", inet_ntoa( *( struct in_addr*)
@@ -354,8 +410,11 @@ int is_localhost(char *host, struct hostent *host_info)
 	int counter = 0;
 	if (!strncmp(host, "localhost", 10)) return 1; 
 	
-	/*if (!strncmp(host, host_info->h_name, MAXHOSTLENGTH)) return 1;*/
 
+
+	/*if (!strncmp(host, host_info->h_name, MAXHOSTLENGTH)) return 1;*/
+	localhostname = copy_string((char *)host_info->h_name); 
+	
 	while ((addr =  host_info->h_addr_list[counter++]) != NULL) {
 		if (!strncmp(host, (char *)inet_ntoa(
 				     *( struct in_addr*)(addr)),
@@ -367,21 +426,6 @@ int is_localhost(char *host, struct hostent *host_info)
 		
 	}
 	return 0;
-}
-
-/* Return malloced copy of given string
- */
-char *copy_string(char *to_copy)
-{
-	int str_len = strlen(to_copy) + 1;
-	char *copied_str; 
-	if ((copied_str = (char *)malloc(str_len * sizeof(char))) == NULL) {
-		perror("copy_string");
-		exit(errno);
-	}
-	strncpy(copied_str, to_copy, str_len);
-	copied_str[str_len - 1] = '\0';
-	return copied_str; 
 }
 
 /* Create list of hostnames from main method arguments
@@ -449,6 +493,9 @@ int main( int argc, char* argv[] )
 {
         char *host;
 	hosts_data_t hosts_data;
+	
+	
+	
 
         if (argc < 2) {
                 printf("usage: %s server_host value \n",
