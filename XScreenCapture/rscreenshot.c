@@ -15,15 +15,16 @@ GdkPixbuf *get_screenshot(GdkPixbuf *screenshot){
     gdk_window_get_origin (root_window, &x_orig, &y_orig);
 
     screenshot = gdk_pixbuf_get_from_drawable (NULL, root_window, NULL,
-                                           x_orig, y_orig, 0, 0, width, height);
+                                          x_orig, y_orig, 0, 0, width, height);
     return screenshot;
 }
 
-gboolean save_func(const gchar *buf, gsize count, GError **error, gpointer data){	
+gboolean save_func(const gchar *buf, gsize count, GError **err, gpointer data){
         char *host;
         input_data screenshot_1_arg;
  	gboolean result;
 
+	// NEED TO MALLOC TEST FOR ERRORS & FREE & 80 char limit this
         screenshot_1_arg.input_data.input_data_val = (gchar *) malloc(4096*sizeof(gchar));
 	memcpy(screenshot_1_arg.input_data.input_data_val, buf, 4096);
         screenshot_1_arg.input_data.input_data_len = 4096;
@@ -47,43 +48,38 @@ void update_remote_display(CLIENT *clnt_refresh, CLIENT *clnt_delete){
 	fprintf(stderr, "Taking screenshot\n");
 }
 
-/*void create_clients(char *host, CLIENT *clnt_init, CLIENT *clnt_delete, 
-				CLIENT *clnt_refresh)
+void create_clients(char *host, CLIENT **clnt_init, CLIENT **clnt_delete, 
+				CLIENT **clnt_refresh)
 {
-	clnt_init = clnt_create(host, INITDISPLAYPROG, INITDISPLAYVERS, "udp");	
-        clnt_delete = clnt_create(host, DELETEIMAGEPROG, DELETEIMAGEVERS, "udp");
+	*clnt_init = clnt_create(host, INITDISPLAYPROG, INITDISPLAYVERS, "udp");	
+        *clnt_delete = clnt_create(host, DELETEIMAGEPROG, DELETEIMAGEVERS, "udp");
 	clnt_screenshot = clnt_create(host, SCREENSHOTPROG, SCREENSHOTVERS, "udp");
-	clnt_refresh = clnt_create(host, REFRESHDISPLAYPROG, REFRESHDISPLAYVERS, "udp");	
-        if (clnt_init == NULL || clnt_delete == NULL || clnt_screenshot == NULL 
-	   || clnt_refresh == NULL) {
+	*clnt_refresh = clnt_create(host, REFRESHDISPLAYPROG, REFRESHDISPLAYVERS, "udp");	
+        if (*clnt_init == NULL || *clnt_delete == NULL || clnt_screenshot == NULL 
+	   || *clnt_refresh == NULL) {
                 clnt_pcreateerror(host);
                 exit(1);
         }
 
-} /* end create_clients */
+}
 
 void screenshotprog_1(char *host)
 {
         input_data screenshot_1_arg;
         CLIENT *clnt_delete, *clnt_refresh, *clnt_init;	
 
-	/*create_clients(host, clnt_init, clnt_delete, clnt_refresh);*/
-	clnt_init = clnt_create(host, INITDISPLAYPROG, INITDISPLAYVERS, "udp");	
-        clnt_delete = clnt_create(host, DELETEIMAGEPROG, DELETEIMAGEVERS, "udp");
-	clnt_screenshot = clnt_create(host, SCREENSHOTPROG, SCREENSHOTVERS, "udp");
-	clnt_refresh = clnt_create(host, REFRESHDISPLAYPROG, REFRESHDISPLAYVERS, "udp");	
-        if (clnt_init == NULL || clnt_delete == NULL || clnt_screenshot == NULL 
-	   || clnt_refresh == NULL) {
-                clnt_pcreateerror(host);
-                exit(1);
-        }
+	create_clients(host, &clnt_init, &clnt_delete, &clnt_refresh);
 
 	gtk_init(NULL, NULL);
 	initdisplay_1(NULL, clnt_init);
-	while (1){
+	
+        //TODO: NEED TO IMPLEMENT QUITTING & DESTROY METHODS
+        while (1){
 		update_remote_display(clnt_refresh, clnt_delete);
 		sleep(1.0);
 	}
+
+        
 }
 
 
