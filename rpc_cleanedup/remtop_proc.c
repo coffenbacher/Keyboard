@@ -85,13 +85,12 @@ int *mouse_1(mouse_input *input, CLIENT *client)
 int *image_1(image_input *input, CLIENT *client)
 {
 	pid_t forkpid;
-	char hostname[MAXHOSTLENGTH];
-	gethostname(hostname, MAXHOSTLENGTH);
+	fprintf(stderr, "%s", input->host);	
 	if (input->init) {
 		if ( (forkpid = fork()) < 0)
 			fprintf(stderr, "Can't create fork.");
 		else if  (forkpid == 0){
-			execl("./rscreenshot", "rscreenshot", hostname, NULL);
+			execl("./rscreenshot", "rscreenshot", input->host, NULL);
 			exit(1);
 		}
 		else {
