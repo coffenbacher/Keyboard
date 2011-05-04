@@ -1,9 +1,3 @@
-/* Remote screenshot server code.
- * Taken from http://www.linuxjournal.com/articles/lj/0042/2204/2204l4.html
- *
- * Reformatted and loggin by Mark A. Sheldon.
- *
- */
 #include <rpc/rpc.h>
 #include "screenshot.h"
 #include <stdio.h>
@@ -11,16 +5,16 @@
 #include <gdk/gdkx.h>
 #include <gtk/gtk.h>
 #include <unistd.h>
+#include <sys/prctl.h>
 
-FILE *fp;
-
-static double sum_screenshot;
 static int result;
 
 int *screenshot_1(input_data *input, CLIENT *client)
 {
-        gchar *dp = input->input_data.input_data_val;
-	
+	FILE *fp;
+        gchar *dp;
+
+	dp = input->input_data.input_data_val;
         fp = fopen("screenshot.jpeg", "a");
         fwrite(dp, sizeof(*dp), 4096, fp);
 	fclose(fp);
@@ -43,23 +37,36 @@ int *deleteimage_1_svc(void *tmp, struct svc_req *svc)
 
 int *refreshdisplay_1_svc(void *tmp, struct svc_req *svc)
 {
-	/* INSERT NEW SIGNAL HERE */
-	/* image = gtk_image_new_from_file ("screenshot.jpeg"); */
-	/*gtk_container_add(GTK_CONTAINER(window), image);	
-	gtk_widget_show_all(window);
-	gtk_main();
-	
-	gtk_widget_queue_draw(window);*/
-
-
-	kill(15185, SIGIO);
-
-	result = 1;
-	return &result;
+/* UPDATE THIS SIGNAL TO USE A DYNAMIC NUMBER HERE */
+        FILE *pid_grep;
+        pid_t forkpid;
+	int pid;
+	pid_grep = popen("pidof graphics", "r");
+	if (fscanf(pid_grep, "%d", &pid) == -1) {
+		/* FORK TO CREATE GRAPHICS */
+	        if ( (forkpid = fork()) < 0 )
+        	        fprintf(stderr, "Can't create fork.");
+	        else if (forkpid == 0){
+                	execv("graphics", NULL);
+			_exit(0);
+		}
+		else {
+			pid = forkpid;
+		}
+		result = 0;
+		return &result;
+	}
+	else {
+		fprintf(stderr, "%d", pid);
+		kill(pid, SIGIO);
+		result = 1;
+		return &result;
+	}
 }
 
 int *initdisplay_1_svc(void *tmp, struct svc_req *svc)
 {
+/* PUT INITIALIZATION AND FORKING CODE HERE */
        result = 1;	
        return &result;
 }
