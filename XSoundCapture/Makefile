@@ -1,20 +1,31 @@
-CC = gcc
-CFLAGS = -O0 -Wall -g -pedantic 	# -ansi
-PULSE = -D_REENTRANT -lpulse -lpulse-simple -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -lpulse-mainloop-glib -lglib-2.0  
+# Taken from http://www.linuxjournal.com/articles/lj/0042/2204/2204l5.html
+# Modifcations from MAS:
+CC     = gcc
+CFLAGS = -g -Wall
 
-all: pacat parec
+# Back to our regularly scheduled Makefile...
 
-pacat: pacat-simple.o
-	$(CC) $(CFLAGS) $(PULSE) -o pacat pacat-simple.o
+BIN    = remtop remtop_svc
+GEN    = remtop_clnt.c remtop_svc.c remtop_xdr.c remtop.h
+RPCCOM = rpcgen
 
-pacat-simple.o: pacat-simple.c
-	$(CC) $(CFLAGS) $(PULSE) -o pacat-simple.o -c pacat-simple.c
+all: $(BIN)
 
-parec: parec-simple.o
-	$(CC) $(CFLAGS) $(PULSE) -o parec parec-simple.o
+# remtop (remote desktop) is the client
+remtop: remtop.o remtop_clnt.o remtop_xdr.o
+	$(CC) -o $@ remtop.o remtop_clnt.o remtop_xdr.o -lXtst
 
-parec-simple.o: parec-simple.c
-	$(CC) $(CFLAGS) $(PULSE) -o parec-simple.o -c parec-simple.c
+remtop.o: remtop.c remtop.h
+	$(CC) -g remtop.c -c
 
-clean:
-	rm -rf pacat-simple parec-simple *.o
+remtop_svc: remtop_proc.o remtop_svc.o remtop_xdr.o
+	$(CC) -o $@ remtop_proc.o remtop_svc.o remtop_xdr.o -lXtst
+
+remtop_proc.o: remtop_proc.c remtop.h
+
+$(GEN): remtop.x
+	$(RPCCOM) remtop.x
+
+clean cleanup:
+	rm -f $(GEN) *.o $(BIN)
+
