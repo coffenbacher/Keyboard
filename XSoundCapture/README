@@ -1,3 +1,6 @@
+#########################################################
+Jack:
+#########################################################
 ---------------------------------------------------------
 Install:
 ---------------------------------------------------------
@@ -47,5 +50,42 @@ If the soundcard is already linked to something:
 sudo /sbin/alsa force-reload
 
 
+---------------------------------------------------------
+Link:
+---------------------------------------------------------
 
+http://jackaudio.org/files/docs/html/group__ClientFunctions.html
+http://dis-dot-dat.net/index.cgi?item=jacktuts/starting/invsimpleclient
 http://trac.jackaudio.org/wiki/WalkThrough/User/NetJack
+
+
+
+#########################################################
+PulseAudio:
+#########################################################
+---------------------------------------------------------
+Install:
+---------------------------------------------------------
+sudo apt-get install libasound2-plugins "pulseaudio-*" paman padevchooser paprefs pavucontrol pavumeter
+
+
+
+
+#########################################################
+Icecast:
+#########################################################
+---------------------------------------------------------
+Install:
+---------------------------------------------------------
+sudo get-apt install icecast2
+sudo get-apt install ices2
+
+sudo gedit /etc/default/icecast2
+change last line to: ENABLE=true
+
+mkdir /var/log/ices   # in case you need logfiles.  
+mkdir /etc/ices2      # for putting ices stuff in. 
+
+
+
+http://askubuntu.com/questions/28496/how-do-i-setup-an-icecast-server-for-broadcasting-audio-in-my-network
