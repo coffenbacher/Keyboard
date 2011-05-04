@@ -1,6 +1,67 @@
-/* Remote average client code.
- * Taken from http://www.linuxjournal.com/articles/lj/0042/2204/2204l4.html
+/* Software Systems Final Project
+   remtop.c
+   Remtop Client Code
+   
+   Authors: Charles Offenbacher, Poorva Singal, and Jon Reed
+   Last updated: 5/4/2011
+
+   This is the client side code for remtop.  It connects to the apprporiate
+   host and grabs the keyboard and mouse of the local computer if the host
+   is running on a remote server.  If connected to a remote host, it also
+   starts the service that allows for screenshots to be received.  
+
+   Notes:
+   Poorva worked on the keyboard/mouse interactions and thus the one primarily
+   responsible for the contents of this file.  Charlie helped in discovering
+   the Xlib functions used.  He worked on the graphics and thus worked with
+   Poorva to integrate that code into here.  
+   
+   Credits:
+   The basic structure for how the RPC is set up was taken from: 
+   Taken from http://www.linuxjournal.com/articles/lj/0042/2204/2204l4.html
+
+   We used it essentially just for the structure but modified all of its
+   methods.
+   --
+   The Xlib input functions we used are contained in the following: 
+   http://tronche.com/gui/x/xlib/input/
+
+   These just told us what functions were available to use and included the
+   man pages for these functions. 
+   --
+   
+   We started with code from here to learn how to capture keyboard and mouse
+   events: 
+   http://cboard.cprogramming.com/linux-programming/
+   127015-greedy-xgrabkeyboard.html
+
+   This gave us the structure for opening a Display, grabbing/ungrabbing
+   the keyboard, and picking up key events (figuring out which keys they
+   mapped to).  It prints out the key that is pressed.
+
+   This just gave us the starting point.  We used it to figure out what the
+   appropriate arguments would be for doing mouse events as there are
+   functions similar to grabbing a keyboard for grabbing a pointer.  We added
+   checks for events like KeyRelease as well as all the checks for mouse events.
+   In addition, instead of printing out the keys being pressed, we had to
+   modify it to pass the keycode to the server.  A lot of refactoring was
+   also had to be done.
+   --
+
+   Half a line of code was used from the following site for the function
+   that checks if a given name is a local host address:
+   http://paulschreiber.com/blog/2005/10/28/simple-gethostbyname-example/
+   
+   It told us that we needed to cast the address from the hostent structure to
+   inet_ntoa(* (struct in_addr*).
+   --
+
+   We also referred a lot to the man pages for most of the functions used in
+   this file.  
+
  */
+
+
 
 #include "remtop.h"
 #include <stdlib.h>
@@ -9,18 +70,14 @@
 #include <string.h>
 #include <netdb.h>
 #include <errno.h>
+#include <arpa/inet.h>
 
 #define XC_arrow 2
-#define NOHOST 0
-#define LOCALHOST -1
-#define REMOTEHOST 1
 #define MAXHOSTLENGTH 1024
-
 #define NEXT 1
 #define PREV -1
 #define LOCAL 0
 
-int hostType = NOHOST; 
 
 static char *localhostname; 
 
@@ -31,7 +88,6 @@ struct hosts_data_s{
 };
 
 typedef struct hosts_data_s *hosts_data_t;
-
 
 void switch_hosts(int which_host, Display *dpy, hosts_data_t hosts_data); 
 char *copy_string(char *to_copy); 
@@ -204,23 +260,6 @@ void remoteHost_KeyPress(Display *dpy, XEvent *ev, CLIENT *clnt_keyboard,
 	if (!strncmp(s, "Alt", 3)) *alt_down = 1;
 	if (!strncmp(s, "Control", 7)) *ctrl_down = 1;
 	if (!strncmp(s, "Shift", 5)) *shift_down = 1;
-	/*
-	if(!strncmp(s, "q", 1) && *ctrl_down && *alt_down) {
-		*quit_loop = 1;
-		*quit_program = 1;
-	} else if(!strcmp(s, "Up") && *ctrl_down && *shift_down) {
-		*which_host = NEXT;
-		*quit_loop = 1;
-	} else if (!strcmp(s, "Down") && *ctrl_down
-		   && *shift_down) {
-		*which_host = PREV;
-		*quit_loop = 1;
-	} else if (!strcmp(s, "l") && *ctrl_down
-		   && *shift_down) {
-		*which_host = LOCAL; 
-		*quit_loop = 1;
-	}
-	*/
 }
 
 /* Perform necessary actions for when a key is released when running on
@@ -288,29 +327,21 @@ void remoteHost_MotionNotify(Display *dpy, XEvent *ev, CLIENT *clnt_mouse)
 /* TODO: get proper inputs in here (change argv and argc)*/
 void remoteHostLoop(Display *dpy, hosts_data_t hosts_data) 
 {
-	int quit_program = 0;
-	int quit_loop = 0; 
-	key_input keyboard_1_arg; 
-	mouse_input mouse_1_arg;
+	int quit_program = 0, quit_loop = 0, button, x, y, kc;
 	image_input image_1_arg; 
 	XEvent ev;
-	CLIENT *clnt_keyboard;
-	CLIENT *clnt_mouse;
-	CLIENT *clnt_image; 
-	int button;
-	int x, y, kc;
+	CLIENT *clnt_keyboard, *clnt_mouse, *clnt_image;
 	char *s; 
 	int shift_down = 0, ctrl_down = 0, alt_down = 0;
 	int which_host = 0;
 	char *host = hosts_data->hostnames[hosts_data->cur_host_index];
-	
-
 
 	create_clients(host, &clnt_keyboard, &clnt_mouse, &clnt_image);
 	image_1_arg.init = 1;
 	gethostname(image_1_arg.host, MAXHOSTLENGTH); 
-	/*strcpy(image_1_arg.host, "psingal-Latitude-D630"); */
+
 	system("./screenshot_svc &");
+	sleep(0.5);
 	image_1(&image_1_arg, clnt_image);
 	grab_hardware(dpy);
 
@@ -345,7 +376,7 @@ void remoteHostLoop(Display *dpy, hosts_data_t hosts_data)
 	image_1_arg.init = 0; 
 	image_1(&image_1_arg, clnt_image);
 	system("pkill screenshot_svc");
-	  system("pkill graphics");
+	system("pkill graphics");
 	destroy_clients(clnt_keyboard, clnt_mouse, clnt_image); 
 
 	if (!quit_program) {
@@ -386,33 +417,17 @@ char *copy_string(char *to_copy)
 	return copied_str; 
 }
 
-
-/* Borrowed the line:
-   "printf( "%s ", inet_ntoa( *( struct in_addr*)
-   ( hp -> h_addr_list[i])));"
-   from http://paulschreiber.com/blog/2005/10/28/
-   simple-gethostbyname-example/
-   
-   I added the (char *) parsing to make it work properly */
 /*
   Return true if given host name is actually just the local host.
   Needs to be given the hostent for the localhost.
-
-  Note: I used the example code in:
-    http://paulschreiber.com/blog/2005/10/28/simple-gethostbyname-example/
-  to help write one of the lines.  It told me that I needed to cast addr to
-  inet_ntoa(* (struct in_addr*).  I still had to add the (char *) to that line
-  to make it work fully.  
  */
 int is_localhost(char *host, struct hostent *host_info)
 {
 	char *addr;
 	int counter = 0;
 	if (!strncmp(host, "localhost", 10)) return 1; 
-	
 
-
-	/*if (!strncmp(host, host_info->h_name, MAXHOSTLENGTH)) return 1;*/
+	if (!strncmp(host, host_info->h_name, MAXHOSTLENGTH)) return 1;
 	localhostname = copy_string((char *)host_info->h_name); 
 	
 	while ((addr =  host_info->h_addr_list[counter++]) != NULL) {
@@ -493,9 +508,6 @@ int main( int argc, char* argv[] )
 {
         char *host;
 	hosts_data_t hosts_data;
-	
-	
-	
 
         if (argc < 2) {
                 printf("usage: %s server_host value \n",
