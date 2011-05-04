@@ -70,6 +70,7 @@
 #include <string.h>
 #include <netdb.h>
 #include <errno.h>
+#include <arpa/inet.h>
 
 #define XC_arrow 2
 #define MAXHOSTLENGTH 1024
